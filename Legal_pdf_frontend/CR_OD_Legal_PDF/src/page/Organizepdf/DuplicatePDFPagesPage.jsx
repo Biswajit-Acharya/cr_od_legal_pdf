@@ -4,12 +4,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export default function DuplicatePDFPagesPage() {
   const [file, setFile] = useState(null);
+  const [pageSelection, setPageSelection] = useState('');
+  const [copies, setCopies] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -38,27 +40,24 @@ export default function DuplicatePDFPagesPage() {
 
   const handleProcess = async () => {
     if (!file) return;
+    if (!pageSelection.trim()) {
+      setErrorMsg('Please enter pages to duplicate (e.g., "1,3,5").');
+      return;
+    }
     setIsProcessing(true);
     setErrorMsg(null);
     setIsDone(false);
 
     try {
-      // 1. Upload
-      const uploadForm = new FormData();
-      uploadForm.append('file', file);
-
-      const uploadRes = await fetch(`${API_BASE_URL}/api/pdf/duplicate-pages/upload`, {
-        method: 'POST',
-        body: uploadForm,
-      });
-
-      if (!uploadRes.ok) throw new Error('Upload failed.');
-      const uploadData = await uploadRes.json();
-      
-      // 2. Process
       const processForm = new FormData();
-      processForm.append('request_id', uploadData.request_id);
-      processForm.append('filename', uploadData.filename);
+      processForm.append('file', file);
+      processForm.append('page_selection', pageSelection);
+      processForm.append('copies', copies.toString());
+      processForm.append('insert_mode', 'after');
+      processForm.append('custom_position', '1');
+      processForm.append('preserve_bookmarks', 'true');
+      processForm.append('preserve_annotations', 'true');
+      processForm.append('preserve_metadata', 'true');
 
       const processRes = await fetch(`${API_BASE_URL}/api/pdf/duplicate-pages/process`, {
         method: 'POST',
@@ -74,8 +73,12 @@ export default function DuplicatePDFPagesPage() {
       const dlUrl = processData.download_url;
       if (!dlUrl) throw new Error('Download URL not provided by server.');
 
-      // 3. Prepare Download
-      setDownloadUrl(`${API_BASE_URL}${dlUrl}`);
+      const blobRes = await fetch(`${API_BASE_URL}${dlUrl}`);
+      if (!blobRes.ok) throw new Error('Failed to fetch result file.');
+      const blob = await blobRes.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setDownloadUrl(blobUrl);
+      setPreviewBlobUrl(blobUrl);
       setIsDone(true);
       setShowPreview(true);
     } catch (err) {
@@ -87,10 +90,14 @@ export default function DuplicatePDFPagesPage() {
 
   const resetApp = () => {
     setFile(null);
+    setPageSelection('');
+    setCopies(1);
     setIsProcessing(false);
     setIsDone(false);
     setErrorMsg(null);
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setDownloadUrl(null);
+    setPreviewBlobUrl(null);
     setShowPreview(false);
   };
 
@@ -128,6 +135,34 @@ export default function DuplicatePDFPagesPage() {
                 {file ? file.name : 'Drag & Drop your PDF here'}
               </p>
             </div>
+
+            {file && (
+              <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Pages to Duplicate</label>
+                  <input
+                    type="text"
+                    value={pageSelection}
+                    onChange={(e) => setPageSelection(e.target.value)}
+                    placeholder="e.g., 1, 3, 5-7"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Specify which pages you want to duplicate.</p>
+                </div>
+                <div className="w-full sm:w-1/3">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Number of Copies</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={copies}
+                    onChange={(e) => setCopies(parseInt(e.target.value) || 1)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">How many extra copies?</p>
+                </div>
+              </div>
+            )}
 
             <div className="text-center mt-8">
               <button
@@ -176,7 +211,7 @@ export default function DuplicatePDFPagesPage() {
             {showPreview && (
               <div className="w-full h-[600px] mt-8 border border-slate-300 rounded-xl overflow-hidden shadow-inner bg-white">
                 <iframe
-                  src={downloadUrl}
+                  src={`${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                   className="w-full h-full"
                   title="PDF Preview"
                 />

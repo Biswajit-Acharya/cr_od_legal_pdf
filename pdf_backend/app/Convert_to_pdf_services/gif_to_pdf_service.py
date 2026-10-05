@@ -73,7 +73,7 @@ class GifToPdfService:
                     frames.append({
                         "index": i,
                         "duration": dur,
-                        "url": f"/api/convert/gif-to-pdf/frame/{request_id}/{filename}/{i}"
+                        "url": f"/api/convert-to-pdf/gif-to-pdf/frame/{request_id}/{filename}/{i}"
                     })
                     
                     frame_count += 1
@@ -277,7 +277,7 @@ class GifToPdfService:
                 "success": True,
                 "request_id": request_id,
                 "filename": zip_filename,
-                "download_url": f"/api/convert/gif-to-pdf/download/{request_id}/{zip_filename}"
+                "download_url": f"/api/convert-to-pdf/gif-to-pdf/download/{request_id}/{zip_filename}"
             }
         else:
             final_p = processed_paths[0]
@@ -285,7 +285,7 @@ class GifToPdfService:
                 "success": True,
                 "request_id": request_id,
                 "filename": final_p.name,
-                "download_url": f"/api/convert/gif-to-pdf/download/{request_id}/{final_p.name}"
+                "download_url": f"/api/convert-to-pdf/gif-to-pdf/download/{request_id}/{final_p.name}"
             }
 
 gif_to_pdf_service = GifToPdfService()

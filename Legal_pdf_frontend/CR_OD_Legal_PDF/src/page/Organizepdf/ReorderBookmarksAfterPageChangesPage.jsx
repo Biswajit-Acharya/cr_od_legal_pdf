@@ -16,6 +16,7 @@ export default function ReorderBookmarksAfterPageChangesPage() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -87,7 +88,13 @@ export default function ReorderBookmarksAfterPageChangesPage() {
       }
       const dlUrl = `/api/pdf/reorder-bookmarks/download/${processData.request_id}/${processData.filename}`;
 
-      setDownloadUrl(`${API_BASE_URL}${dlUrl}`);
+      // Fetch blob for preview (to avoid download-forced headers)
+      const blobRes = await fetch(`${API_BASE_URL}${dlUrl}`);
+      if (!blobRes.ok) throw new Error('Failed to fetch result file.');
+      const blob = await blobRes.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setDownloadUrl(blobUrl);
+      setPreviewBlobUrl(blobUrl);
       setIsDone(true);
     } catch (err) {
       setErrorMsg(err.message || 'An unexpected error occurred.');
@@ -101,8 +108,10 @@ export default function ReorderBookmarksAfterPageChangesPage() {
     setIsProcessing(false);
     setIsDone(false);
     setErrorMsg(null);
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setDownloadUrl(null);
     setPreviewUrl(null);
+    setPreviewBlobUrl(null);
     setShowPreview(false);
   };
 
@@ -212,7 +221,7 @@ export default function ReorderBookmarksAfterPageChangesPage() {
             {showPreview && (
               <div className="w-full h-[600px] mt-8 border border-slate-300 rounded-xl overflow-hidden shadow-inner bg-white">
                 <iframe
-                  src={downloadUrl}
+                  src={`${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                   className="w-full h-full"
                   title="PDF Preview"
                 />

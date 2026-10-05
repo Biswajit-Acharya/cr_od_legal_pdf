@@ -8,11 +8,13 @@ import io
 import logging
 import shutil
 import tempfile
+import sys
 from pathlib import Path
 from typing import Optional
 
 import pikepdf
 from pikepdf import Pdf, Name
+from fastapi import HTTPException
 
 from app.core.constants import COMPRESSED_OUTPUT_PREFIX
 from app.core.paths import Paths
@@ -55,9 +57,7 @@ class CompressPDFService:
             elif compression_level == "recommended":
                 quality, scale = 35, 0.6
             else:
-                # Custom mode: Try to hit target size in a smart way.
                 reduction_ratio = target_bytes / original_size if original_size > 0 else 1.0
-                
                 if reduction_ratio > 0.8:
                     quality, scale = 50, 0.8
                 elif reduction_ratio > 0.5:
@@ -67,11 +67,16 @@ class CompressPDFService:
                 else:
                     quality, scale = 5, 0.2
 
-            self._compress_to(input_pdf, tmp, quality, scale)
+            try:
+                self._compress_to(input_pdf, tmp, quality, scale)
+            except Exception as e:
+                logger.error(f"Compression failed internally: {e}")
+                shutil.copy2(str(input_pdf), str(out_path))
+                msg = f"File could not be compressed due to complex structure. Returning original."
+                return self._resp(out_name, out_path, original_size, request_id, msg)
+
             final_size = tmp.stat().st_size
             
-            # If compression actually increased the file size (can happen with already compressed docs),
-            # just return the original file to avoid wasting space.
             if final_size >= original_size:
                 shutil.copy2(str(input_pdf), str(out_path))
                 msg = "File could not be compressed further without quality loss. Returning original."
@@ -96,19 +101,24 @@ class CompressPDFService:
                 tmp.unlink(missing_ok=True)
 
     def _compress_to(self, src: Path, dst: Path, quality: int, scale: float) -> None:
-        with Pdf.open(str(src)) as pdf:
-            self._strip_metadata(pdf)
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(max(old_limit, 5000))
+        try:
+            with Pdf.open(str(src)) as pdf:
+                self._strip_metadata(pdf)
 
-            for page in pdf.pages:
-                self._process_page(page, quality, scale)
+                for page in pdf.pages:
+                    self._process_page(page, quality, scale)
 
-            pdf.save(
-                str(dst),
-                compress_streams=True,
-                object_stream_mode=pikepdf.ObjectStreamMode.generate,
-                recompress_flate=True,
-                linearize=False,
-            )
+                pdf.save(
+                    str(dst),
+                    compress_streams=True,
+                    object_stream_mode=pikepdf.ObjectStreamMode.generate,
+                    recompress_flate=True,
+                    linearize=False,
+                )
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     def _strip_metadata(self, pdf: Pdf) -> None:
         try:
@@ -165,6 +175,7 @@ class CompressPDFService:
     def _compress_image(self, img_obj, quality: int, scale: float) -> None:
         try:
             from PIL import Image
+            Image.MAX_IMAGE_PIXELS = None
 
             width = int(img_obj.get("/Width", 0))
             height = int(img_obj.get("/Height", 0))

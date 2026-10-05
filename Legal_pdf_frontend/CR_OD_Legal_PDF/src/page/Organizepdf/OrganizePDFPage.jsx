@@ -76,7 +76,11 @@ function renderFileList() {
     
     // Enable buttons
     const btns = document.querySelectorAll('button.btn-primary, button#submitBtn, button[onclick^="handleAction"]');
-    btns.forEach(btn => btn.disabled = false);
+    btns.forEach(btn => {
+        btn.disabled = false;
+        btn.style.cursor = 'pointer';
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    });
     
     // Update Drop Zone text
     const p = qs('[class*="upload-zone"] p.drop-text') || qs('[id*="dropZone"] p.drop-text');
@@ -117,48 +121,76 @@ window.removeFile = function(index) {
 };
 
 window.handleAction = async function() {
-    if (state.files.length === 0 || state.isProcessing) return;
+    var domInputs = Array.from(document.querySelectorAll('input[type="file"]'));
+    var domFiles = domInputs.flatMap(function(i) { return Array.from(i.files || []); });
     
-    // Add fly animation to button
-    const submitBtn = qs('button.btn-primary') || qs('#submitBtn') || qs('button[id$="Btn"]');
-    if (submitBtn) {
-        submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'scale-95');
-        const textSpan = submitBtn.querySelector('span');
-        if (textSpan) textSpan.classList.add('-translate-x-4', 'opacity-0');
-        const svg1 = submitBtn.querySelectorAll('svg')[0];
-        if (svg1) {
-            svg1.classList.remove('opacity-0');
-            svg1.classList.add('translate-x-[200px]', '-translate-y-[100px]', 'opacity-0', 'scale-150', 'rotate-45');
-        }
-        const svg2 = submitBtn.querySelectorAll('svg')[1];
-        if (svg2) svg2.classList.add('hidden');
+    var filesToProcess = [];
+    if (window.PDFTools && window.PDFTools.files && window.PDFTools.files.length > 0) {
+        filesToProcess = window.PDFTools.files;
+    } else if (state.files && state.files.length > 0) {
+        filesToProcess = state.files;
+    } else if (domFiles.length > 0) {
+        filesToProcess = domFiles;
     }
 
+    if (!filesToProcess || filesToProcess.length === 0) {
+        alert('Kripya pehle PDF file upload/select karein!');
+        return;
+    }
+    if (state.isProcessing) return;
+    
     state.isProcessing = true;
 
-    setTimeout(() => {
-        const mainUI = qs('#mainUI');
-        if (mainUI) hide(mainUI);
+    const mainUI = qs('#mainUI');
+    if (mainUI) hide(mainUI);
 
-        const procUI = qs('#processingUI');
-        if (procUI) show(procUI);
+    const procUI = qs('#processingUI');
+    if (procUI) show(procUI);
 
-        const succUI = qs('#successUI');
-        if (succUI) hide(succUI);
+    const succUI = qs('#successUI');
+    if (succUI) hide(succUI);
 
-        setTimeout(() => {
-            showSuccess('Done processing!');
-            
+    try {
+        const formData = new FormData();
+        formData.append('file', filesToProcess[0]);
+
+        const res = await fetch('/api/organize_pdf_services/organizepdf', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!res.ok) throw new Error('API server error (' + res.status + ')');
+        const data = await res.json();
+
+        if (data && data.download_url) {
+            const dlBtn = qs('#successUI a') || qs('a[download]');
+            if (dlBtn) {
+                dlBtn.href = data.download_url;
+                dlBtn.setAttribute('download', data.filename || 'organized.pdf');
+                dlBtn.removeAttribute('onclick');
+            }
             if (procUI) hide(procUI);
             if (succUI) show(succUI);
-            
-            state.isProcessing = false;
-        }, 2600);
-    }, 500);
+            showSuccess('Done processing!');
+        } else {
+            throw new Error(data.message || 'Failed to organize PDF');
+        }
+    } catch (err) {
+        showError('Organize PDF Error: ' + err.message);
+        if (procUI) hide(procUI);
+        if (mainUI) show(mainUI);
+    } finally {
+        state.isProcessing = false;
+    }
 };
 
 window.resetApp = function() {
     state.files = [];
+    if (window.PDFTools) {
+        window.PDFTools.files = [];
+        if (typeof window.PDFTools.renderFiles === 'function') window.PDFTools.renderFiles();
+        if (typeof window.PDFTools.renderPreview === 'function') window.PDFTools.renderPreview();
+    }
     const mainUI = qs('#mainUI');
     const procUI = qs('#processingUI');
     const succUI = qs('#successUI');
@@ -292,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <!-- Action Button -->
     <div class="text-center mt-8">
-        <button class="btn btn-primary bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold py-4 px-12 rounded-xl shadow-xl shadow-indigo-200 transform transition-all duration-500 flex items-center justify-center gap-2 group relative overflow-hidden mx-auto disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto" id="submitBtn" onclick="handleAction()" disabled>
+        <button class="btn btn-primary bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold py-4 px-12 rounded-xl shadow-xl shadow-indigo-200 transform transition-all duration-500 flex items-center justify-center gap-2 group relative overflow-hidden mx-auto hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto cursor-pointer" id="submitBtn" onclick="handleAction()">
             <span class="transition-all duration-500">Execute Action</span>
             <svg class="w-5 h-5 absolute right-1/4 transition-all duration-500 ease-in-out opacity-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
             <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">

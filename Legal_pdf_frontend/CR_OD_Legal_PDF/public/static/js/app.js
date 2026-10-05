@@ -229,10 +229,12 @@ const PDFTools = {
 
     toast(msg, type = 'error') {
         const el = document.getElementById('toast');
+        if (!el) return;
         el.textContent = msg;
         el.className = `toast ${type}`;
         setTimeout(() => { el.className = 'toast hidden'; }, 3500);
     }
 };
 
+window.PDFTools = PDFTools;
 document.addEventListener('DOMContentLoaded', () => PDFTools.init());

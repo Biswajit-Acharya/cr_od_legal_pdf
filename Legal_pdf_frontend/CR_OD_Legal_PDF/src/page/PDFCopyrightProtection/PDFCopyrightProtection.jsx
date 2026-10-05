@@ -38,6 +38,7 @@ import LicenseVerificationPage from './LicenseVerificationPage';
 import OwnershipCertificatePage from './OwnershipCertificatePage';
 import PublisherInformationPage from './PublisherInformationPage';
 import UsageRightsManagementPage from './UsageRightsManagementPage';
+import BlockchainOwnershipVerificationPage from './BlockchainOwnershipVerificationPage';
 /**
  * @file PDFCopyrightProtection.jsx
  * @module components/PDFCopyrightProtection
@@ -717,6 +718,9 @@ export function PDFCopyrightProtectionPage({ onBack, searchQuery = "" }) {
     }
     if (selectedTool.id === 'blockchain-copyright-registration') {
       return <BlockchainCopyrightRegistrationPage tool={selectedTool} onBack={handleBack} />;
+    }
+    if (selectedTool.id === 'blockchain-ownership-verification') {
+      return <BlockchainOwnershipVerificationPage tool={selectedTool} onBack={handleBack} />;
     }
     if (selectedTool.id === 'content-ownership-validation') {
       return <ContentOwnershipValidationPage tool={selectedTool} onBack={handleBack} />;

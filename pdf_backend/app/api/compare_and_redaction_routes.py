@@ -224,6 +224,8 @@ async def redact_pdf_search(payload: RedactSearchRequest):
             whole_word=payload.whole_word,
         )
         return {"success": True, "count": len(matches), "matches": matches}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Redact search error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

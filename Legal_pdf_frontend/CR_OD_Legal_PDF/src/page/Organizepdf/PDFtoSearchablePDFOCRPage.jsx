@@ -9,7 +9,7 @@ export default function PDFtoSearchablePDFOCRPage() {
   const [errorMsg, setErrorMsg] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -43,22 +43,16 @@ export default function PDFtoSearchablePDFOCRPage() {
     setIsDone(false);
 
     try {
-      // 1. Upload
-      const uploadForm = new FormData();
-      uploadForm.append('file', file);
-
-      const uploadRes = await fetch(`${API_BASE_URL}/api/pdf/pdf-to-searchable/upload`, {
-        method: 'POST',
-        body: uploadForm,
-      });
-
-      if (!uploadRes.ok) throw new Error('Upload failed.');
-      const uploadData = await uploadRes.json();
-      
-      // 2. Process
       const processForm = new FormData();
-      processForm.append('request_id', uploadData.request_id);
-      processForm.append('filename', uploadData.filename);
+      processForm.append('file', file);
+      processForm.append('language', 'english');
+      processForm.append('quality', 'balanced');
+      processForm.append('auto_rotate', 'true');
+      processForm.append('deskew', 'true');
+      processForm.append('clean_noise', 'true');
+      processForm.append('preserve_metadata', 'true');
+      processForm.append('skip_searchable', 'true');
+      processForm.append('force_ocr', 'false');
 
       const processRes = await fetch(`${API_BASE_URL}/api/pdf/pdf-to-searchable/process`, {
         method: 'POST',
@@ -75,7 +69,12 @@ export default function PDFtoSearchablePDFOCRPage() {
       if (!dlUrl) throw new Error('Download URL not provided by server.');
 
       // 3. Prepare Download
-      setDownloadUrl(`${API_BASE_URL}${dlUrl}`);
+      const blobRes = await fetch(`${API_BASE_URL}${dlUrl}`);
+      if (!blobRes.ok) throw new Error('Failed to fetch result file.');
+      const blob = await blobRes.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setDownloadUrl(blobUrl);
+      setPreviewBlobUrl(blobUrl);
       setIsDone(true);
       setShowPreview(true);
     } catch (err) {
@@ -90,7 +89,9 @@ export default function PDFtoSearchablePDFOCRPage() {
     setIsProcessing(false);
     setIsDone(false);
     setErrorMsg(null);
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setDownloadUrl(null);
+    setPreviewBlobUrl(null);
     setShowPreview(false);
   };
 
@@ -176,7 +177,7 @@ export default function PDFtoSearchablePDFOCRPage() {
             {showPreview && (
               <div className="w-full h-[600px] mt-8 border border-slate-300 rounded-xl overflow-hidden shadow-inner bg-white">
                 <iframe
-                  src={downloadUrl}
+                  src={`${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                   className="w-full h-full"
                   title="PDF Preview"
                 />

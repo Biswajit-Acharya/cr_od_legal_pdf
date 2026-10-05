@@ -22,7 +22,18 @@ from app.Convert_to_pdf_services.gif_to_pdf_service import gif_to_pdf_service
 from app.Convert_to_pdf_services.heic_to_pdf_service import heic_to_pdf_service
 from app.Convert_to_pdf_services.html_to_pdf_service import html_to_pdf_service
 from app.Convert_to_pdf_services.illustrator_to_pdf_service import illustrator_to_pdf_service
-from app.Convert_to_pdf_services.jpg_to_pdf_service import jpg_to_pdf_service
+from app.Convert_to_pdf_services.jpg_to_pdf_service import jpg_to_pdf_service, convert_any_image_to_pdf
+
+
+def _smart_write_pdf_fallback(input_path: Path, output_pdf_path: Path):
+    """Smart fallback: if the file is an image, render image page directly into PDF; otherwise fallback to text PDF."""
+    ext = input_path.suffix.lower()
+    image_exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".gif", ".tif", ".tiff", ".heic", ".heif", ".ico", ".jfif", ".pjpeg", ".pjp", ".raw"}
+    if ext in image_exts:
+        if convert_any_image_to_pdf(input_path, output_pdf_path):
+            return
+    word_to_pdf_service._write_text_pdf(input_path, output_pdf_path)
+
 from app.Convert_to_pdf_services.json_to_pdf_service import json_to_pdf_service
 from app.Convert_to_pdf_services.markdown_to_pdf_service import markdown_to_pdf_service
 from app.Convert_to_pdf_services.mobi_to_pdf_service import mobi_to_pdf_service
@@ -121,7 +132,7 @@ async def bmp_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -150,7 +161,7 @@ async def csv_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -179,7 +190,7 @@ async def email_to_pdf_process(request_id: str = Form(...), filename: str = Form
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -208,7 +219,7 @@ async def epub_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -237,7 +248,7 @@ async def excel_to_pdf_process(request_id: str = Form(...), filename: str = Form
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -266,7 +277,7 @@ async def folder_to_pdf_upload(request: Request, file: UploadFile = File(...)):
     return {"success": True, "request_id": request_id, "filename": file.filename}
 
 @router.post("/convert-to-pdf/folder-to-pdf/process")
-async def folder_to_pdf_process(request_id: str = Form(...), filename: str = Form(...)):
+async def folder_to_pdf_process(request_id: str = Form(...), filename: str = Form("folder.zip")):
     try:
         upload_dir = Paths.request_upload(request_id)
         # Build selected_files from whatever was uploaded — use correct 'relative_path' key
@@ -304,7 +315,7 @@ async def folder_to_pdf_process(request_id: str = Form(...), filename: str = For
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -342,7 +353,7 @@ async def gif_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -374,7 +385,7 @@ async def heic_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -416,7 +427,7 @@ async def html_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -454,8 +465,8 @@ async def html_to_pdf_render(req: CodeRenderRequest):
             upload_dir = Paths.request_upload(request_id)
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
-            out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            out_name = f"{Path(req.filename).stem}.pdf"
+            _smart_write_pdf_fallback(upload_dir / "input.html", output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -482,8 +493,8 @@ async def json_to_pdf_render(req: CodeRenderRequest):
             upload_dir = Paths.request_upload(request_id)
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
-            out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            out_name = f"{Path(req.filename).stem}.pdf"
+            _smart_write_pdf_fallback(upload_dir / "input.json", output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -510,8 +521,8 @@ async def xml_to_pdf_render(req: CodeRenderRequest):
             upload_dir = Paths.request_upload(request_id)
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
-            out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            out_name = f"{Path(req.filename).stem}.pdf"
+            _smart_write_pdf_fallback(upload_dir / "input.xml", output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -540,7 +551,7 @@ async def illustrator_to_pdf_process(request_id: str = Form(...), filename: str 
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -569,7 +580,7 @@ async def jpg_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -602,7 +613,7 @@ async def json_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -634,7 +645,7 @@ async def markdown_to_pdf_process(request_id: str = Form(...), filename: str = F
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -665,7 +676,7 @@ async def mobi_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -688,7 +699,7 @@ async def multiple_files_to_pdf_upload(request: Request, files: List[UploadFile]
     return {"success": True, "request_id": request_id, "filenames": saved, "count": len(saved)}
 
 @router.post("/convert-to-pdf/multiple_files-to-pdf/process")
-async def multiple_files_to_pdf_process(request_id: str = Form(...), filename: str = Form(...)):
+async def multiple_files_to_pdf_process(request_id: str = Form(...), filename: str = Form("multiple_files.pdf")):
     try:
         upload_dir = Paths.request_upload(request_id)
         all_files = [f.name for f in sorted(upload_dir.iterdir()) if f.is_file()]
@@ -703,7 +714,7 @@ async def multiple_files_to_pdf_process(request_id: str = Form(...), filename: s
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -732,7 +743,7 @@ async def odp_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -761,7 +772,7 @@ async def ods_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -790,7 +801,7 @@ async def odt_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -819,7 +830,7 @@ async def png_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -850,7 +861,7 @@ async def powerpoint_to_pdf_process(request_id: str = Form(...), filename: str =
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -881,7 +892,7 @@ async def publisher_to_pdf_process(request_id: str = Form(...), filename: str = 
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -913,7 +924,7 @@ async def raw_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -945,7 +956,7 @@ async def rtf_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -990,7 +1001,7 @@ async def screenshot_to_pdf_process(request_id: str = Form(...), filename: str =
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1021,7 +1032,7 @@ async def svg_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1070,7 +1081,7 @@ async def text_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1102,7 +1113,7 @@ async def tiff_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1131,7 +1142,7 @@ async def visio_to_pdf_process(request_id: str = Form(...), filename: str = Form
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1168,7 +1179,7 @@ async def webpage_to_pdf_process(request_id: str = Form(...), filename: str = Fo
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1201,7 +1212,7 @@ async def webp_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1238,7 +1249,7 @@ async def word_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1270,7 +1281,7 @@ async def xml_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1301,7 +1312,7 @@ async def xps_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1402,7 +1413,7 @@ async def zip_to_pdf_process(request_id: str = Form(...), filename: str = Form(.
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1431,7 +1442,7 @@ async def pdfa_to_pdf_process(request_id: str = Form(...), filename: str = Form(
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1461,7 +1472,7 @@ async def outlookmsg_to_pdf_process(request_id: str = Form(...), filename: str =
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1495,7 +1506,7 @@ async def caddwgdxf_to_pdf_process(request_id: str = Form(...), filename: str = 
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))
@@ -1529,7 +1540,7 @@ async def photoshoppsd_to_pdf_process(request_id: str = Form(...), filename: str
             output_dir = Paths.request_output(request_id)
             output_dir.mkdir(parents=True, exist_ok=True)
             out_name = f"{Path(filename).stem}.pdf"
-            word_to_pdf_service._write_text_pdf(upload_dir / filename, output_dir / out_name)
+            _smart_write_pdf_fallback(upload_dir / filename, output_dir / out_name)
             return {"success": True, "download_url": f"/api/convert-to-pdf/download/{request_id}/{out_name}"}
         except Exception as fallback_e:
             raise HTTPException(status_code=500, detail=str(fallback_e))

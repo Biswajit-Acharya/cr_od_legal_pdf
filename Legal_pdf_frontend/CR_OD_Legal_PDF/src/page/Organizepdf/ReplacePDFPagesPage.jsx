@@ -127,6 +127,9 @@ export default function ReplacePDFPagesPage() {
             processForm.append('size_mode', settings.sizeMode);
             processForm.append('preserve_bookmarks', settings.preserveBookmarks);
             processForm.append('preserve_metadata', settings.preserveMetadata);
+            processForm.append('preserve_labels', settings.preserveLabels);
+            processForm.append('preserve_hyperlinks', settings.preserveHyperlinks);
+            processForm.append('preserve_annotations', settings.preserveAnnotations);
             
             const processRes = await fetch(`${API_BASE_URL}/api/pdf/replace-pdf-pages/process`, {
                 method: 'POST',

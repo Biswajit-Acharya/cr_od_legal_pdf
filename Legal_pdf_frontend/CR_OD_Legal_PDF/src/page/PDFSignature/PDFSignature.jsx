@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file PDFSignature.jsx
  * @description PDF Signature sub-page for CR OD Legal PDF.
  *
@@ -16,6 +16,10 @@
 import React from 'react';
 import SlideInText from '../../components/SlideInText';
 import ToolWorkspace from '../ToolWorkspace';
+import PDFSignPage from './PDFSignPage';
+import DigitalSignPage from './DigitalSignPage';
+import ESignPage from './ESignPage';
+import UsbTokenSignaturePage from './UsbTokenSignaturePage';
 import {
   ArrowRight,
   PenTool,
@@ -752,7 +756,26 @@ export function PDFSignaturePage({ onBack, searchQuery = "" }) {
 
   // Show ToolWorkspace when a tool card is clicked
   if (selectedTool) {
-    return <ToolWorkspace tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    const handleBack = () => {
+      setSelectedTool(null);
+      const parentHash = window.location.hash.split('/')[0];
+      window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash);
+      window.scrollTo(0, 0);
+    };
+
+    if (selectedTool.id === 'pdf-sign') {
+      return <PDFSignPage tool={selectedTool} onBack={handleBack} />;
+    }
+    if (selectedTool.id === 'digital-sign') {
+      return <DigitalSignPage tool={selectedTool} onBack={handleBack} />;
+    }
+    if (selectedTool.id === 'e-sign') {
+      return <ESignPage tool={selectedTool} onBack={handleBack} />;
+    }
+    if (selectedTool.id === 'usb-token-signature') {
+      return <UsbTokenSignaturePage tool={selectedTool} onBack={handleBack} />;
+    }
+    return <ToolWorkspace tool={selectedTool} onBack={handleBack} />;
   }
 
     return (

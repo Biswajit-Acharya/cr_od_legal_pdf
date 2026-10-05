@@ -14,6 +14,7 @@ from app.core.constants import SPLIT_OUTPUT_PREFIX
 from app.core.paths import Paths
 from app.schemas.pdf_schema import SplitPDFResponse
 from app.utils.filename import output_filename
+from app.pdf_security_services.protect_pdf_service import protect_pdf_service
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,11 @@ class SplitPDFService:
             SplitPDFResponse with list of output filenames.
         """
         output_dir = Paths.request_output(request_id)
+
+        try:
+            protect_pdf_service.check_extraction_permission(input_pdf)
+        except Exception as e:
+            raise ValueError(str(e))
 
         reader = PdfReader(str(input_pdf))
         total_pages = len(reader.pages)

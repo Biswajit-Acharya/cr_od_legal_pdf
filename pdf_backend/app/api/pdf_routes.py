@@ -62,7 +62,9 @@ from app.utils.validators import (
     validate_file_size,
     validate_pdf_content_type,
     validate_pdf_extension,
+    validate_pdf_extension,
 )
+from app.pdf_security_services.file_expiration_service import file_expiration_service
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +189,12 @@ async def extract_pages(
         saved = await _save_uploads([file], request_id)
         result = await _extract_service.extract(saved[0], pages, request_id)
         return result
+    except ValueError as exc:
+        logger.warning("Extract validation failed: %s", exc)
+        raise HTTPException(status_code=400, detail=str(exc))
+    except ValueError as exc:
+        logger.warning("Extract validation failed: %s", exc)
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         logger.exception("Extract failed [request_id=%s]", request_id)
         raise
@@ -373,10 +381,14 @@ async def add_page_numbers(
 @router.get("/download/{request_id}/{filename}")
 async def download_file(request_id: str, filename: str):
     """Download a processed PDF file."""
-    file_path = Paths.request_output(request_id) / filename
+    output_dir = Paths.request_output(request_id)
+    file_path = output_dir / filename
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
+        
+    # Check if the file has expired
+    file_expiration_service.check_file_expiration(output_dir)
 
     return FileResponse(
         path=str(file_path),
@@ -768,7 +780,9 @@ async def analyze_pdf_linearization(
 @router.post("/linearization/process")
 async def process_pdf_linearization(
     request: Request,
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    request_id: Optional[str] = Form(None),
+    filename: Optional[str] = Form(None),
     enable_fast_web_view: bool = Form(True),
     preserve_metadata: bool = Form(True),
     optimize_object_streams: bool = Form(True),
@@ -777,12 +791,28 @@ async def process_pdf_linearization(
     force_rebuild: bool = Form(False),
 ):
     """Process and linearize the uploaded PDF for Fast Web View."""
-    request_id = request.state.request_id
+    req_id = request_id or getattr(request.state, "request_id", uuid.uuid4().hex[:8])
     try:
-        saved = await _save_uploads([file], request_id)
+        if file and file.filename:
+            saved = await _save_uploads([file], req_id)
+            input_pdf = saved[0]
+        elif req_id:
+            input_pdf = None
+            upload_dir = Paths.request_upload(req_id)
+            if filename and (upload_dir / filename).exists():
+                input_pdf = upload_dir / filename
+            else:
+                files = list(upload_dir.glob("*.pdf"))
+                if files:
+                    input_pdf = files[0]
+            if not input_pdf or not input_pdf.exists():
+                raise HTTPException(status_code=404, detail="Uploaded file not found.")
+        else:
+            raise HTTPException(status_code=400, detail="Missing file or request_id")
+
         result = await _linearization_service.process(
-            input_pdf=saved[0],
-            request_id=request_id,
+            input_pdf=input_pdf,
+            request_id=req_id,
             enable_fast_web_view=enable_fast_web_view,
             preserve_metadata=preserve_metadata,
             optimize_object_streams=optimize_object_streams,
@@ -791,6 +821,8 @@ async def process_pdf_linearization(
             force_rebuild=force_rebuild,
         )
         return result.to_dict()
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Linearization processing failed")
         raise HTTPException(status_code=500, detail=str(exc))

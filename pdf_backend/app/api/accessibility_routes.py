@@ -37,6 +37,65 @@ async def _save_upload(upload: UploadFile) -> str:
     return tmp.name
 
 
+async def _run_file_analysis(file: UploadFile, analyzer):
+    """Run a synchronous accessibility analyzer and always remove its upload."""
+    input_path = await _save_upload(file)
+    try:
+        return analyzer(input_path)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Accessibility analysis failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    finally:
+        if os.path.exists(input_path):
+            os.unlink(input_path)
+
+
+# These endpoints are used by the shared React tool workspace.  The richer
+# document-ID endpoints below remain available for the dedicated pages.
+@router.post("/accessibility/wcag-checker/scan")
+@router.post("/accessibility/checker")
+@router.post("/accessibility/compliance-dashboard")
+@router.post("/accessibility/fix-suggestions")
+@router.post("/accessibility/export-report")
+async def general_accessibility_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(file, accessibility_service.general_accessibility_check)
+
+
+@router.post("/accessibility/color-contrast")
+async def color_contrast_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(file, accessibility_service.check_color_contrast)
+
+
+@router.post("/accessibility/alt-text")
+async def alt_text_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(file, accessibility_service.check_alt_text)
+
+
+@router.post("/accessibility/accessible-forms")
+async def accessible_forms_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(file, accessibility_service.check_accessible_forms)
+
+
+@router.post("/accessibility/reading-order")
+async def reading_order_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(file, accessibility_service.analyze_reading_order)
+
+
+@router.post("/accessibility/heading-structure")
+async def heading_structure_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(
+        file,
+        lambda path: {"success": True, "headings": accessibility_service._get_headings(path)},
+    )
+
+
+@router.post("/accessibility/language-detection")
+async def language_detection_check(file: UploadFile = File(...)):
+    return await _run_file_analysis(file, accessibility_service.detect_language)
+
+
 @router.post("/accessibility/upload")
 async def upload_pdf(
     file: UploadFile = File(...),

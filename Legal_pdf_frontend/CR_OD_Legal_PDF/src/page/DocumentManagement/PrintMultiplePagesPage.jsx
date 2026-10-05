@@ -82,7 +82,7 @@ export default function PrintMultiplePagesPage({ onBack }) {
       fd.append('custom_width_mm', customWidth);
       fd.append('custom_height_mm', customHeight);
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
       const res = await fetch(`${API_BASE_URL}/document-management/multi-page-sheet/preview`, {
         method: 'POST',
         body: fd
@@ -121,7 +121,7 @@ export default function PrintMultiplePagesPage({ onBack }) {
       fd.append('custom_height_mm', customHeight);
       fd.append('output_name', '');
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
       const res = await fetch(`${API_BASE_URL}/document-management/multi-page-sheet/generate`, {
         method: 'POST',
         body: fd

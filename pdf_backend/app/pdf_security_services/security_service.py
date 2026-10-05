@@ -35,6 +35,12 @@ from typing import Any, Dict, List, Optional, Tuple
 import fitz  # PyMuPDF
 from pypdf import PdfReader, PdfWriter
 
+from app.pdf_security_services.protect_pdf_service import protect_pdf_service
+from app.pdf_security_services.unlock_pdf_service import unlock_pdf_service
+from app.pdf_security_services.digital_signature_verification_service import (
+    digital_signature_verification_service,
+)
+
 logger = logging.getLogger(__name__)
 
 # ── Trusted certificates (static list for demo) ──────────────────────────
@@ -199,58 +205,23 @@ class PDFSecurityService:
     # ── PASSWORD PROTECTION ──────────────────────────────────────────────
 
     @staticmethod
-    def protect_pdf(input_path: str, output_path: str, password: str) -> Dict[str, Any]:
-        """Encrypt a PDF with a user password using pypdf AES-256."""
-        try:
-            reader = PdfReader(input_path)
-            writer = PdfWriter()
-            for page in reader.pages:
-                writer.add_page(page)
-
-            if reader.metadata:
-                writer.add_metadata(reader.metadata)
-
-            writer.encrypt(
-                user_password=password,
-                owner_password=password,
-                use_128bit=True,
-                permissions_flag=-1,
-            )
-
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "wb") as f:
-                writer.write(f)
-
-            return {"success": True, "message": "PDF protected with password successfully."}
-        except Exception as e:
-            logger.error(f"protect_pdf error: {e}", exc_info=True)
-            return {"success": False, "error": str(e)}
+    def protect_pdf(input_path: str, output_path: str, password: str, **kwargs: Any) -> Dict[str, Any]:
+        """Compatibility wrapper for Protect PDF processing."""
+        return protect_pdf_service.protect_pdf(
+            input_path=input_path,
+            output_path=output_path,
+            user_password=password,
+            **kwargs,
+        )
 
     @staticmethod
     def unlock_pdf(input_path: str, output_path: str, password: str) -> Dict[str, Any]:
-        """Remove password protection from a PDF."""
-        try:
-            reader = PdfReader(input_path)
-            if reader.is_encrypted:
-                result = reader.decrypt(password)
-                if result == 0:
-                    return {"success": False, "error": "Incorrect password."}
-
-            writer = PdfWriter()
-            for page in reader.pages:
-                writer.add_page(page)
-
-            if reader.metadata:
-                writer.add_metadata(reader.metadata)
-
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "wb") as f:
-                writer.write(f)
-
-            return {"success": True, "message": "PDF unlocked successfully."}
-        except Exception as e:
-            logger.error(f"unlock_pdf error: {e}", exc_info=True)
-            return {"success": False, "error": str(e)}
+        """Compatibility wrapper for Unlock PDF processing."""
+        return unlock_pdf_service.unlock_pdf(
+            input_path=input_path,
+            output_path=output_path,
+            password=password,
+        )
 
     # ── JAVASCRIPT REMOVAL ──────────────────────────────────────────────
 
@@ -788,73 +759,8 @@ class PDFSecurityService:
 
     @staticmethod
     def verify_digital_signatures(input_path: str) -> Dict[str, Any]:
-        """Verify digital signatures in the PDF using pyhanko."""
-        try:
-            signatures: List[Dict[str, Any]] = []
-            doc = fitz.open(input_path)
-
-            # Attempt pyhanko verification
-            try:
-                from pyhanko.sign.validation import validate_pdf_signature
-                from pyhanko.pdf_utils.reader import PdfFileReader
-
-                with open(input_path, "rb") as f:
-                    pdf_reader = PdfFileReader(f)
-                    sig_count = 0
-                    for page_num in range(len(doc)):
-                        page = doc[page_num]
-                        for annot in (page.annots() or []):
-                            annot_type = annot.type
-                            if annot_type and annot_type[0] == 18:  # Widget
-                                sig_count += 1
-
-                    # Basic validation attempt
-                    try:
-                        status = validate_pdf_signature(pdf_reader, 0)
-                        signatures.append({
-                            "index": 0,
-                            "valid": status.intact and status.valid,
-                            "intact": status.intact,
-                            "trust_status": str(status.trust_status) if hasattr(status, "trust_status") else "unknown",
-                            "signer": str(status.signer_cert.subject.human_friendly) if status.signer_cert else "Unknown",
-                            "timestamp": str(status.signing_time) if hasattr(status, "signing_time") else "Unknown",
-                        })
-                    except Exception as val_err:
-                        signatures.append({
-                            "index": 0,
-                            "valid": False,
-                            "error": str(val_err),
-                        })
-
-            except ImportError:
-                # Fallback: basic annotation-based detection
-                for page_num in range(len(doc)):
-                    page = doc[page_num]
-                    for annot in (page.annots() or []):
-                        annot_info = annot.info
-                        if annot_info:
-                            title = annot_info.get("title", "")
-                            contents = annot_info.get("content", "")
-                            if "sign" in title.lower() or "sign" in contents.lower():
-                                signatures.append({
-                                    "page": page_num + 1,
-                                    "title": title,
-                                    "content": contents[:200] if contents else "",
-                                    "valid": None,
-                                    "note": "pyhanko not available; basic detection only.",
-                                })
-
-            doc.close()
-
-            return {
-                "success": True,
-                "signatures_found": len(signatures),
-                "signatures": signatures,
-                "all_valid": all(s.get("valid") for s in signatures) if signatures else False,
-            }
-        except Exception as e:
-            logger.error(f"verify_digital_signatures error: {e}", exc_info=True)
-            return {"success": False, "error": str(e)}
+        """Compatibility wrapper for digital signature verification."""
+        return digital_signature_verification_service.verify_pdf(input_path)
 
     # ── DOCUMENT INTEGRITY ──────────────────────────────────────────────
 

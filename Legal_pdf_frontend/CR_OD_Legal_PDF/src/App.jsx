@@ -41,6 +41,10 @@ import OrganizepdfPage, { OrganizepdfCard, PDF_TOOLS as tools1 } from './page/Or
 import { PDFtoConvertPage, PDF_TOOLS as tools2 } from './page/PDFtoConvert/PDFtoConvert';
 import { ConvertPDFPage, PDF_TOOLS as tools3 } from './page/ConvertPDF/ConvertPDF';
 import { PDFSecurityPage, PDF_TOOLS as tools4 } from './page/PDFSecurity/PDFSecurity';
+import DocumentIntegrityVerificationPage from './page/PDFSecurity/DocumentIntegrityVerificationPage';
+import PDFSecurityScorePage from './page/PDFSecurity/PDFSecurityScorePage';
+import PDFSecurityPolicyTemplatesPage from './page/PDFSecurity/PDFSecurityPolicyTemplatesPage';
+import AISecurityRiskDetectionPage from './page/PDFSecurity/AISecurityRiskDetection/AISecurityRiskDetectionPage';
 import { PDFSignaturePage, PDF_TOOLS as tools5 } from './page/PDFSignature/PDFSignature';
 import { AISmartFeaturesPage, PDF_TOOLS as tools6 } from './page/AISmartFeatures/AISmartFeatures';
 import { CompareRedactionPage, PDF_TOOLS as tools7 } from './page/CompareRedaction/CompareRedaction';
@@ -55,6 +59,8 @@ import { PDFCopyrightProtectionPage, PDF_TOOLS as tools15 } from './page/PDFCopy
 import SoftwareAboutUsPage, { SOFTWARE_ABOUT_US_TOOLS as tools16 } from './page/SoftwareAboutUs/SoftwareAboutUs';
 import ContactUsPage from './page/ContactUs/ContactUs';
 import AgentWidget from './page/AIagent/agent';
+import SharedDocumentViewerPage from './page/PDFSecurity/SharedDocumentViewerPage';
+import ShareManagementPage from './page/PDFSecurity/ShareManagementPage';
 
 
 /* -------------------------------------------------------------------------- */
@@ -98,6 +104,8 @@ const SUB_TOOLS_MAP = {
 export default function App() {
   const [activePage, setActivePage] = useState(() => {
     const hash = window.location.hash.replace('#', '').split('/')[0];
+    if (hash === 'shared') return 'shared';
+    if (hash === 'manage-shares') return 'manage-shares';
     return hash && SUB_TOOLS_MAP[hash] ? hash : 'home';
   });          // Currently active sub-page id
   const [searchQuery, setSearchQuery] = useState('');            // Controlled search input value
@@ -318,13 +326,39 @@ export default function App() {
 
         {/* ── a) Tool Workspace ─────────────────────────────────────────── */}
         {selectedDirectTool ? (
-          <ToolWorkspace tool={selectedDirectTool} onBack={() => {
-            if (window.history.state?.toolOpen) {
-              window.history.back();
-            } else {
-              setSelectedDirectTool(null);
-            }
-          }} />
+          selectedDirectTool.id === 'document-integrity-verification' ? (
+            <DocumentIntegrityVerificationPage tool={selectedDirectTool} onBack={() => {
+              if (window.history.state?.toolOpen) {
+                window.history.back();
+              } else {
+                setSelectedDirectTool(null);
+              }
+            }} />
+          ) : selectedDirectTool.id === 'pdf-security-score' ? (
+            <PDFSecurityScorePage tool={selectedDirectTool} onBack={() => {
+              if (window.history.state?.toolOpen) {
+                window.history.back();
+              } else {
+                setSelectedDirectTool(null);
+              }
+            }} />
+          ) : selectedDirectTool.id === 'pdf-security-policy-templates' ? (
+            <PDFSecurityPolicyTemplatesPage tool={selectedDirectTool} onBack={() => {
+              if (window.history.state?.toolOpen) {
+                window.history.back();
+              } else {
+                setSelectedDirectTool(null);
+              }
+            }} />
+          ) : (
+            <ToolWorkspace tool={selectedDirectTool} onBack={() => {
+              if (window.history.state?.toolOpen) {
+                window.history.back();
+              } else {
+                setSelectedDirectTool(null);
+              }
+            }} />
+          )
 
           /* ── b) Search Results ─────────────────────────────────────────── */
         ) : query !== '' ? (
@@ -410,6 +444,10 @@ export default function App() {
           <SoftwareAboutUsPage onBack={handlePageBack} />
         ) : activePage === 'Contact-Us' ? (
           <ContactUsPage onBack={handlePageBack} />
+        ) : activePage === 'shared' ? (
+          <SharedDocumentViewerPage onBack={handlePageBack} />
+        ) : activePage === 'manage-shares' ? (
+          <ShareManagementPage onBack={handlePageBack} />
         // ) : activePage === 'AI-Agent' ? (
         //   <AIAgentPage onBack={handlePageBack} />
           /* ── d) Home Dashboard — default view ─────────────────────────── */
@@ -440,3 +478,4 @@ export default function App() {
     </div>
   );
 }
+

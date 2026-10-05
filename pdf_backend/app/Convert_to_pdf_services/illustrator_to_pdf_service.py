@@ -266,8 +266,8 @@ class IllustratorToPdfService:
                 "success": True,
                 "request_id": request_id,
                 "filename": final_pdf.name,
-                "download_url": f"/api/convert/illustrator-to-pdf/download/{request_id}/{final_pdf.name}",
-                "view_url": f"/api/convert/illustrator-to-pdf/view/{request_id}",
+                "download_url": f"/api/convert-to-pdf/illustrator-to-pdf/download/{request_id}/{final_pdf.name}",
+                "view_url": f"/api/convert-to-pdf/illustrator-to-pdf/view/{request_id}",
             }
 
         finally:

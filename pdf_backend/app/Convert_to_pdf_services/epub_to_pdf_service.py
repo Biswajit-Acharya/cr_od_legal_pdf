@@ -346,8 +346,8 @@ class EpubToPdfService:
             )
 
             # Override download URL for epub-to-pdf routes
-            result["download_url"] = f"/api/convert/epub-to-pdf/download/{request_id}/{result['filename']}"
-            result["view_url"] = f"/api/convert/epub-to-pdf/view/{request_id}/{result['filename']}"
+            result["download_url"] = f"/api/convert-to-pdf/epub-to-pdf/download/{request_id}/{result['filename']}"
+            result["view_url"] = f"/api/convert-to-pdf/epub-to-pdf/view/{request_id}/{result['filename']}"
             
             return result
             

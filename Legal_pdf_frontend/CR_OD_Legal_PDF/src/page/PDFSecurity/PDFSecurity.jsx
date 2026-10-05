@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file PDFSecurity.jsx
  * @description PDF Security sub-page. Provides 32 security tools: password protection, unlock, digital signatures, watermark, malware scan, metadata protection, PDF/A validation, and AI risk analysis.
  *
@@ -8,6 +8,27 @@
 import React from 'react';
 import SlideInText from '../../components/SlideInText';
 import ToolWorkspace from '../ToolWorkspace';
+import ProtectPDFPage from './ProtectPDFPage';
+import DigitalSignatureVerificationPage from './DigitalSignatureVerificationPage';
+import DocumentIntegrityVerificationPage from './DocumentIntegrityVerificationPage';
+import PDFSecurityScorePage from './PDFSecurityScorePage';
+import PDFSecurityPolicyTemplatesPage from './PDFSecurityPolicyTemplatesPage';
+import WatermarkProtectionPage from './WatermarkProtectionPage';
+import MalwareScanPDFPage from './MalwareScanPDF/MalwareScanPDFPage';
+import AISecurityRiskDetectionPage from './AISecurityRiskDetection/AISecurityRiskDetectionPage';
+import AISensitiveDataDetectionPage from './AISensitiveDataDetection/AISensitiveDataDetectionPage';
+import AIDocumentClassificationPage from './AIDocumentClassification/AIDocumentClassificationPage';
+import PDFMetadataProtectionPage from './PDFMetadataProtection/PDFMetadataProtectionPage';
+import RemoveJavaScriptPage from './RemoveJavaScript/RemoveJavaScriptPage';
+import AtomicServerTimestampingPage from './AtomicServerTimestampingPage';
+import PDFSanitizationPage from './PDFSanitization/PDFSanitizationPage';
+import RestrictPageExtractionPage from './RestrictPageExtraction/RestrictPageExtractionPage';
+import RestrictAccessibilityCopyPage from './RestrictAccessibilityCopy/RestrictAccessibilityCopyPage';
+import TrustedCertificatesPage from './TrustedCertificates/TrustedCertificatesPage';
+import UnsafeLinkDetectionPage from './UnsafeLinkDetection/UnsafeLinkDetectionPage';
+import PDFForensicAnalysisPage from './PDFForensicAnalysis/PDFForensicAnalysisPage';
+import EmbeddedMediaDetectionPage from './EmbeddedMediaDetection/EmbeddedMediaDetectionPage';
+import PDFVersionSecurityCheckPage from './PDFVersionSecurityCheck/PDFVersionSecurityCheckPage';
 import {
   ArrowRight,
   Lock,
@@ -590,6 +611,72 @@ export function PDFSecurityPage({ onBack, searchQuery = "" }) {
   }, []);
 
   if (selectedTool) {
+    if (selectedTool.id === 'protect-pdf') {
+      return <ProtectPDFPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'pdf-metadata-protection') {
+      return <PDFMetadataProtectionPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'atomic-server-timestamping') {
+      return <AtomicServerTimestampingPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'pdf-sanitization') {
+      return <PDFSanitizationPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'pdf-forensic-analysis') {
+      return <PDFForensicAnalysisPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'embedded-media-detection') {
+      return <EmbeddedMediaDetectionPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'pdf-version-security-check') {
+      return <PDFVersionSecurityCheckPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'restrict-accessibility-copy') {
+      return <RestrictAccessibilityCopyPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'trusted-certificates') {
+      return <TrustedCertificatesPage tool={selectedTool} onBack={() => setSelectedTool(null)} />;
+    }
+    if (selectedTool.id === 'remove-javascript') {
+      return <RemoveJavaScriptPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'digital-signature-verification') {
+      return <DigitalSignatureVerificationPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'document-integrity-verification') {
+      return <DocumentIntegrityVerificationPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'pdf-security-score') {
+      return <PDFSecurityScorePage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'pdf-security-policy-templates') {
+      return <PDFSecurityPolicyTemplatesPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'watermark-protection') {
+      return <WatermarkProtectionPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'malware-scan-pdf') {
+      return <MalwareScanPDFPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'unsafe-link-detection') {
+      return <UnsafeLinkDetectionPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+        if (selectedTool.id === 'ai-security-risk-detection') {
+      return <AISecurityRiskDetectionPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'ai-sensitive-data-detection') {
+      return <AISensitiveDataDetectionPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'ai-document-classification') {
+      return <AIDocumentClassificationPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'restrict-page-extraction') {
+      return <RestrictPageExtractionPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
+    if (selectedTool.id === 'ai-security-recommendations') {
+      return <AISecurityRiskDetectionPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
     return <ToolWorkspace tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
   }
 
@@ -627,3 +714,4 @@ export function PDFSecurityPage({ onBack, searchQuery = "" }) {
     </div>
   );
 }
+

@@ -57,6 +57,11 @@ class Paths:
     def annotations() -> Path:
         return _ensure_dir(Path(settings.ANNOTATION_DIR))
 
+    @staticmethod
+    def secure_shares() -> Path:
+        return _ensure_dir(Path(settings.STORAGE_DIR) / "secure_shares")
+
+
 
 def get_upload_path(document_id: str) -> Path:
     return Path(settings.UPLOAD_DIR) / f"{document_id}.pdf"

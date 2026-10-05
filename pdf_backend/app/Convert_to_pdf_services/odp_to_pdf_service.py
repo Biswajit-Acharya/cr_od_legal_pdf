@@ -253,8 +253,8 @@ class OdpToPdfService:
                 "success": True,
                 "request_id": request_id,
                 "filename": expected_pdf_name,
-                "download_url": f"/api/convert/odp-to-pdf/download/{request_id}/{expected_pdf_name}",
-                "view_url": f"/api/convert/odp-to-pdf/view/{request_id}"
+                "download_url": f"/api/convert-to-pdf/odp-to-pdf/download/{request_id}/{expected_pdf_name}",
+                "view_url": f"/api/convert-to-pdf/odp-to-pdf/view/{request_id}"
             }
             
         finally:

@@ -168,8 +168,8 @@ class MobiToPdfService:
                     shutil.move(result_pdf_path, final_pdf_path)
                     
                 result["filename"] = final_pdf_name
-                result["download_url"] = f"/api/convert/mobi-to-pdf/download/{request_id}/{final_pdf_name}"
-                result["view_url"] = f"/api/convert/mobi-to-pdf/view/{request_id}"
+                result["download_url"] = f"/api/convert-to-pdf/mobi-to-pdf/download/{request_id}/{final_pdf_name}"
+                result["view_url"] = f"/api/convert-to-pdf/mobi-to-pdf/view/{request_id}"
                 
                 return result
                 
@@ -231,8 +231,8 @@ class MobiToPdfService:
                 )
                 
                 # Replace download url route
-                result["download_url"] = f"/api/convert/mobi-to-pdf/download/{request_id}/{final_pdf_name}"
-                result["view_url"] = f"/api/convert/mobi-to-pdf/view/{request_id}"
+                result["download_url"] = f"/api/convert-to-pdf/mobi-to-pdf/download/{request_id}/{final_pdf_name}"
+                result["view_url"] = f"/api/convert-to-pdf/mobi-to-pdf/view/{request_id}"
                 
                 return result
             else:

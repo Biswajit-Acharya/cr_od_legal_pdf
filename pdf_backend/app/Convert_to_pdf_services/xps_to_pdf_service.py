@@ -367,8 +367,8 @@ class XpsToPdfService:
                         "pdf_filename": pdf_filename,
                         "status": "success",
                         "page_count": total_pages,
-                        "download_url": f"/api/convert/xps-to-pdf/download/{request_id}/{pdf_filename}",
-                        "view_url": f"/api/convert/xps-to-pdf/view/{request_id}/{pdf_filename}",
+                        "download_url": f"/api/convert-to-pdf/xps-to-pdf/download/{request_id}/{pdf_filename}",
+                        "view_url": f"/api/convert-to-pdf/xps-to-pdf/view/{request_id}/{pdf_filename}",
                     })
 
                 except (ValueError, RuntimeError) as e:

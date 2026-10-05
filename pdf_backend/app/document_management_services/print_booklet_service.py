@@ -395,7 +395,7 @@ class PrintBookletService:
             if show_borders:
                 shape = page.new_shape()
                 shape.draw_rect(fitz.Rect(x, y, x + cell_w, y + cell_h))
-                shape.finish(color=(0.8, 0.8, 0.8), width=0.3, dash="[2 2]")
+                shape.finish(color=(0.8, 0.8, 0.8), width=0.3, dashes="[2 2]")
                 shape.commit()
             return
 

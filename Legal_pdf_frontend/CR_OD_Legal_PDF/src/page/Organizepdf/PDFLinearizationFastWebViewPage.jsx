@@ -92,8 +92,9 @@ export default function PDFLinearizationFastWebViewPage() {
 
           // 2. Process
           const processForm = new FormData();
-          processForm.append('request_id', uploadData.request_id);
-          processForm.append('filename', uploadData.filename);
+          processForm.append('file', pdfFile);
+          if (uploadData.request_id) processForm.append('request_id', uploadData.request_id);
+          if (uploadData.filename) processForm.append('filename', uploadData.filename);
           processForm.append('target_version', '1.4');
           
           const processRes = await fetch(`${API_BASE_URL}/api/pdf/linearization/process`, {

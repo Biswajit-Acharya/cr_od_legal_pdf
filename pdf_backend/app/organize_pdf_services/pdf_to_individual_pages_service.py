@@ -13,6 +13,7 @@ from pikepdf import Pdf
 
 from app.core.paths import Paths
 from app.schemas.pdf_schema import SplitPDFResponse
+from app.pdf_security_services.protect_pdf_service import protect_pdf_service
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,11 @@ class PDFToIndividualPagesService:
         output_dir = Paths.request_output(request_id)
 
         try:
+            try:
+                protect_pdf_service.check_extraction_permission(input_pdf)
+            except Exception as e:
+                raise ValueError(str(e))
+
             with Pdf.open(str(input_pdf)) as pdf:
                 if pdf.is_encrypted:
                     raise ValueError("Cannot process password-protected PDF. Please unlock it first.")

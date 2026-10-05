@@ -230,9 +230,20 @@ class RedactPdfService:
         if not case_sensitive:
             flags |= fitz.TEXT_DEHYPHENATE
 
+        scanned_pages = 0
+
         for idx in range(len(doc)):
             page = doc[idx]
             page_num = idx + 1
+            
+            page_text = page.get_text("text")
+            if len(page_text.strip()) < 15:
+                scanned_pages += 1
+                if HAS_PYTESSERACT:
+                    ocr_rects = self._scan_ocr_for_query(page_num, page, query, case_sensitive)
+                    matches.extend(ocr_rects)
+                    occ_count += len(ocr_rects)
+                continue
 
             rects = self._find_bbox_for_text(page, query, flags=flags)
             for rect in rects:
@@ -249,7 +260,12 @@ class RedactPdfService:
                     "confidence": 1.0,
                 })
 
+        total_pages = len(doc)
         doc.close()
+        
+        if not matches and scanned_pages == total_pages and not HAS_PYTESSERACT:
+            raise ValueError("This appears to be a scanned or image-only PDF. Tesseract OCR is not installed on the server, so text search cannot be performed. Please manually select the area to redact.")
+            
         return self._deduplicate_candidates(matches)
 
     # ── 5. Pattern & Regex Detection Engine ───────────────────────────────
@@ -268,15 +284,19 @@ class RedactPdfService:
         active_keys = pattern_keys if pattern_keys else list(REGEX_PATTERNS.keys())
 
         cand_id = 0
+        scanned_pages = 0
+        
         for idx in range(len(doc)):
             page = doc[idx]
             page_num = idx + 1
             text = page.get_text("text")
 
             # Check if scanned / image-only page
-            if len(text.strip()) < 15 and HAS_PYTESSERACT:
-                ocr_cands = self._scan_ocr_page(page_num, page)
-                candidates.extend(ocr_cands)
+            if len(text.strip()) < 15:
+                scanned_pages += 1
+                if HAS_PYTESSERACT:
+                    ocr_cands = self._scan_ocr_page(page_num, page)
+                    candidates.extend(ocr_cands)
                 continue
 
             for key in active_keys:
@@ -303,14 +323,24 @@ class RedactPdfService:
                             "confidence": 0.95,
                         })
 
+        total_pages = len(doc)
         doc.close()
+        
+        if not candidates and scanned_pages == total_pages and not HAS_PYTESSERACT:
+            raise ValueError("This appears to be a scanned or image-only PDF. Tesseract OCR is not installed on the server, so pattern detection cannot be performed. Please manually select the area to redact.")
+            
         return self._deduplicate_candidates(candidates)
 
     # ── 6. Intelligent Sensitive Data Auto Scanner ───────────────────────
 
     def detect_sensitive_data(self, session_id: str) -> List[Dict[str, Any]]:
         """Run comprehensive sensitive data auto scanner across all categories and field labels."""
-        pattern_candidates = self.detect_patterns(session_id)
+        try:
+            pattern_candidates = self.detect_patterns(session_id)
+        except ValueError as e:
+            if "scanned" in str(e).lower():
+                raise e
+            pattern_candidates = []
 
         temp_dir = Paths.request_temp(session_id) / "redact_work"
         orig_file = temp_dir / "original.pdf"
@@ -418,6 +448,55 @@ class RedactPdfService:
                 matched_rects.append(fitz.Rect(x0, y0, x1, y1))
 
         return matched_rects
+
+    def _scan_ocr_for_query(
+        self, page_num: int, page: fitz.Page, query: str, case_sensitive: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Fallback OCR search for specific queries on image-only pages."""
+        if not HAS_PYTESSERACT:
+            return []
+            
+        candidates = []
+        try:
+            dpi = 150
+            pix = page.get_pixmap(dpi=dpi)
+            img = Image.open(io.BytesIO(pix.tobytes("png")))
+            ocr_data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+            scale = 72.0 / dpi
+            
+            n_boxes = len(ocr_data["text"])
+            cand_id = 0
+            
+            query_clean = query.strip()
+            if not case_sensitive:
+                query_clean = query_clean.lower()
+                
+            for i in range(n_boxes):
+                text = ocr_data["text"][i].strip()
+                if not text: continue
+                
+                text_compare = text if case_sensitive else text.lower()
+                if query_clean in text_compare:
+                    x = ocr_data["left"][i]
+                    y = ocr_data["top"][i]
+                    w = ocr_data["width"][i]
+                    h = ocr_data["height"][i]
+                    cand_id += 1
+                    candidates.append({
+                        "id": f"search_ocr_{page_num}_{cand_id}",
+                        "page": page_num,
+                        "text": query,
+                        "matched_text": text,
+                        "category": "SEARCH_MATCH",
+                        "category_label": "Search Match (OCR)",
+                        "bbox": [float(x * scale), float(y * scale), float((x + w) * scale), float((y + h) * scale)],
+                        "occurrence": cand_id,
+                        "confidence": 0.90,
+                    })
+        except Exception as e:
+            logger.warning(f"OCR query search exception on page {page_num}: {e}")
+            
+        return candidates
 
     # ── Helper: Candidate Deduplication ───────────────────────────────────
 

@@ -3,7 +3,7 @@ import { Upload, FileText, Download, CheckCircle2, ArrowLeft, X, AlertCircle, Pa
 import apiClient from '../../api/apiClient';
 
 export default function FileAttachmentsPage({ onBack }) {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
   const toolName = "File Attachments";
   const toolDesc = "Manage embedded file attachments within PDF documents — view, add, download, or remove attachments.";
   

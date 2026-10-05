@@ -72,7 +72,7 @@ class TiffToPdfService:
                     
                     frames.append({
                         "index": i,
-                        "url": f"/api/convert/tiff-to-pdf/frame/{request_id}/{filename}/{i}"
+                        "url": f"/api/convert-to-pdf/tiff-to-pdf/frame/{request_id}/{filename}/{i}"
                     })
                     
                     frame_count += 1

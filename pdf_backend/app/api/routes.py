@@ -6,8 +6,8 @@ from app.api.compare_and_redaction_routes import router as compare_and_redaction
 from app.api.document_management_routes import router as document_management_router
 from app.api.pdf_copyright_protection_routes import router as copyright_protection_router
 from app.api.review_annotation_routes import router as review_annotation_router
-from app.api.pdf_signature_routes import router as pdf_signature_router
 from app.api.pdf_security_routes import router as pdf_security_router
+from app.api.pdf_signature_routes import router as pdf_signature_router
 
 # Main API Router
 api_router = APIRouter()
@@ -109,6 +109,9 @@ api_router.include_router(
 from app.api.organize_pdf_services_compat import router as organize_compat_router
 api_router.include_router(organize_compat_router, tags=["Organize PDF Services (Compat)"])
 
+# Register Biometric Authentication Routes
+from app.api.biometric_routes import router as biometric_router
+
 # Register PDF Signature Routes
 api_router.include_router(
     pdf_signature_router,
@@ -116,8 +119,6 @@ api_router.include_router(
     tags=["PDF Signature Tools"]
 )
 
-# Register Biometric Authentication Routes
-from app.api.biometric_routes import router as biometric_router
 api_router.include_router(
     biometric_router,
     prefix="/biometric",
@@ -130,4 +131,12 @@ api_router.include_router(ai_smart_features_router, tags=["AI Smart Features"])
 
 # Register Accessibility Routes
 from app.api.accessibility_routes import router as accessibility_router
-api_router.include_router(accessibility_router, tags=["Accessibility"])
+api_router.include_router(accessibility_router, tags=["Accessibility"])
+
+# Register PDF AI Tools Routes
+from app.api.pdf_ai_tools_routes import router as pdf_ai_tools_router
+api_router.include_router(
+    pdf_ai_tools_router,
+    prefix="/pdf",
+    tags=["PDF AI Tools"]
+)

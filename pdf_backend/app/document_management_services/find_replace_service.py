@@ -22,6 +22,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import fitz  # PyMuPDF
+import pytesseract
+from PIL import Image
+
+# Set path for Windows installations (UB-Mannheim installer default)
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 from app.core.paths import Paths
 
@@ -143,6 +148,40 @@ class FindReplaceService:
                 })
                 match_id += 1
 
+            # OCR Fallback if no digital text matches
+            if not quads:
+                try:
+                    pix = page.get_pixmap(dpi=150)
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    ocr_data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+                    
+                    scale_x = page.rect.width / pix.width
+                    scale_y = page.rect.height / pix.height
+                    
+                    for i, text in enumerate(ocr_data['text']):
+                        if text and text.strip():
+                            is_match = False
+                            if case_sensitive:
+                                is_match = (query in text)
+                            else:
+                                is_match = (query.lower() in text.lower())
+                                
+                            if is_match:
+                                x, y, w, h = ocr_data['left'][i], ocr_data['top'][i], ocr_data['width'][i], ocr_data['height'][i]
+                                x0, y0 = x * scale_x, y * scale_y
+                                x1, y1 = (x + w) * scale_x, (y + h) * scale_y
+                                
+                                matches.append({
+                                    "id": match_id,
+                                    "page": page_idx + 1,
+                                    "rect": [round(x0, 2), round(y0, 2), round(x1, 2), round(y1, 2)],
+                                    "snippet": f"...{text}...",
+                                    "ocr": True
+                                })
+                                match_id += 1
+                except Exception as e:
+                    logger.warning(f"OCR search fallback failed on page {page_idx}: {e}")
+
         doc.close()
 
         return {
@@ -229,6 +268,33 @@ class FindReplaceService:
                         continue
 
                 valid_quads.append(quad)
+
+            # OCR Fallback for replacement
+            if not valid_quads:
+                try:
+                    pix = page.get_pixmap(dpi=150)
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    ocr_data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+                    
+                    scale_x = page.rect.width / pix.width
+                    scale_y = page.rect.height / pix.height
+                    
+                    for i, text in enumerate(ocr_data['text']):
+                        if text and text.strip():
+                            is_match = False
+                            if case_sensitive:
+                                is_match = (query in text)
+                            else:
+                                is_match = (query.lower() in text.lower())
+                                
+                            if is_match:
+                                x, y, w, h = ocr_data['left'][i], ocr_data['top'][i], ocr_data['width'][i], ocr_data['height'][i]
+                                x0, y0 = x * scale_x, y * scale_y
+                                x1, y1 = (x + w) * scale_x, (y + h) * scale_y
+                                quad = fitz.Quad(fitz.Point(x0, y0), fitz.Point(x1, y0), fitz.Point(x0, y1), fitz.Point(x1, y1))
+                                valid_quads.append(quad)
+                except Exception as e:
+                    logger.warning(f"OCR replace fallback failed on page {page_idx}: {e}")
 
             if not valid_quads:
                 continue

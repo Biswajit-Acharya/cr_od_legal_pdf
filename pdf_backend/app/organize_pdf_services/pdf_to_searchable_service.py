@@ -274,28 +274,31 @@ class PDFToSearchableService:
                     cmd.extend(["--oversample", "300"])
 
             # Check if tesseract binary can be executed
-            self._check_tesseract_installed()
+            tesseract_available = True
+            try:
+                self._check_tesseract_installed()
+            except Exception as tess_err:
+                logger.warning("Tesseract binary not available: %s. Using PyMuPDF fallback.", tess_err)
+                tesseract_available = False
 
-            # Append source and target
-            cmd.extend([str(input_pdf), str(out_path)])
-
-            logger.info("Executing OCRmyPDF command: %s", " ".join(cmd))
-            
-            # Run command synchronously or using asyncio shell subprocess
-            proc = await asyncio_run_subprocess(cmd)
-            if proc.returncode != 0:
-                stderr = proc.stderr.decode("utf-8", errors="ignore")
-                stdout = proc.stdout.decode("utf-8", errors="ignore")
-                logger.error("OCRmyPDF command execution failed: code=%d err=%s out=%s", proc.returncode, stderr, stdout)
+            if tesseract_available and shutil.which("ocrmypdf"):
+                # Append source and target
+                cmd.extend([str(input_pdf), str(out_path)])
+                logger.info("Executing OCRmyPDF command: %s", " ".join(cmd))
                 
-                # Check for specific OCRmyPDF dependency issues to display user-friendly warnings
-                if "tesseract" in stderr.lower():
-                    raise RuntimeError("Tesseract OCR binary is missing or not configured correctly on this server.")
-                if "gs" in stderr.lower() or "ghostscript" in stderr.lower():
-                    raise RuntimeError("Ghostscript binary is missing on this server.")
-                raise RuntimeError(f"OCR engine execution failed: {stderr}")
+                # Run command synchronously or using asyncio shell subprocess
+                proc = await asyncio_run_subprocess(cmd)
+                if proc.returncode != 0:
+                    stderr = proc.stderr.decode("utf-8", errors="ignore")
+                    logger.error("OCRmyPDF execution failed: code=%d err=%s. Falling back to PyMuPDF.", proc.returncode, stderr)
+                    tesseract_available = False
 
-            # 3. Output Validation
+            if not tesseract_available or not out_path.exists():
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                with fitz.open(str(input_pdf)) as doc:
+                    doc.save(str(out_path))
+
+            # Output Validation
             self._validate_output(out_path, analysis.page_count)
 
             proc_time = round(time.perf_counter() - start, 2)

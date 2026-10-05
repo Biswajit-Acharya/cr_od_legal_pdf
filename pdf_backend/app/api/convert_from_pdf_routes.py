@@ -359,7 +359,7 @@ async def pdf_to_png_process(request_id: str = Form(...), filename: str = Form(.
         zip_filename = result.get("zip_filename")
         image_urls = [f"/api/convert-from-pdf/pdf-to-png/download/{request_id}/{img}" for img in images]
         zip_url = f"/api/convert-from-pdf/pdf-to-png/download/{request_id}/{zip_filename}" if zip_filename else None
-        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url}
+        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "filename": zip_filename if zip_filename else (images[0] if images else None)}
     except Exception as e:
         logger.error(f"PDF to PNG error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -393,7 +393,7 @@ async def pdf_to_gif_process(request_id: str = Form(...), filename: str = Form(.
         image_urls = [f"/api/convert-from-pdf/pdf-to-gif/download/{request_id}/{img}" for img in images]
         zip_url = f"/api/convert-from-pdf/pdf-to-gif/download/{request_id}/{zip_filename}" if zip_filename else None
         animated_url = f"/api/convert-from-pdf/pdf-to-gif/download/{request_id}/{images[0]}" if result.get("animated") else None
-        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "animated": result.get("animated", False), "animated_url": animated_url}
+        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "animated": result.get("animated", False), "animated_url": animated_url, "filename": zip_filename if zip_filename else (images[0] if images else None)}
     except Exception as e:
         logger.error(f"PDF to GIF error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -426,7 +426,7 @@ async def pdf_to_bmp_process(request_id: str = Form(...), filename: str = Form(.
         zip_filename = result.get("zip_filename")
         image_urls = [f"/api/convert-from-pdf/pdf-to-bmp/download/{request_id}/{img}" for img in images]
         zip_url = f"/api/convert-from-pdf/pdf-to-bmp/download/{request_id}/{zip_filename}" if zip_filename else None
-        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url}
+        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "filename": zip_filename if zip_filename else (images[0] if images else None)}
     except Exception as e:
         logger.error(f"PDF to BMP error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -460,7 +460,7 @@ async def pdf_to_tiff_process(request_id: str = Form(...), filename: str = Form(
         image_urls = [f"/api/convert-from-pdf/pdf-to-tiff/download/{request_id}/{img}" for img in images]
         zip_url = f"/api/convert-from-pdf/pdf-to-tiff/download/{request_id}/{zip_filename}" if zip_filename else None
         multipage_url = f"/api/convert-from-pdf/pdf-to-tiff/download/{request_id}/{images[0]}" if result.get("multipage_tiff") else None
-        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "multipage_url": multipage_url}
+        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "multipage_url": multipage_url, "filename": zip_filename if zip_filename else (images[0] if images else None)}
     except Exception as e:
         logger.error(f"PDF to TIFF error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -493,7 +493,7 @@ async def pdf_to_webp_process(request_id: str = Form(...), filename: str = Form(
         zip_filename = result.get("zip_filename")
         image_urls = [f"/api/convert-from-pdf/pdf-to-webp/download/{request_id}/{img}" for img in images]
         zip_url = f"/api/convert-from-pdf/pdf-to-webp/download/{request_id}/{zip_filename}" if zip_filename else None
-        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url}
+        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "images": images, "image_urls": image_urls, "zip_url": zip_url, "filename": zip_filename if zip_filename else (images[0] if images else None)}
     except Exception as e:
         logger.error(f"PDF to WebP error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -526,7 +526,7 @@ async def pdf_to_svg_process(request_id: str = Form(...), filename: str = Form(.
         zip_filename = result.get("zip_filename")
         file_urls = [f"/api/convert-from-pdf/pdf-to-svg/download/{request_id}/{f}" for f in files]
         zip_url = f"/api/convert-from-pdf/pdf-to-svg/download/{request_id}/{zip_filename}" if zip_filename else None
-        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "files": files, "file_urls": file_urls, "zip_url": zip_url}
+        return {"success": True, "request_id": request_id, "total_pages": result["total_pages"], "files": files, "file_urls": file_urls, "zip_url": zip_url, "filename": zip_filename if zip_filename else (files[0] if files else None)}
     except Exception as e:
         logger.error(f"PDF to SVG error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -556,6 +556,25 @@ async def _single_file_process(service, request_id: str, filename: str, api_slug
         "total_pages": result.get("total_pages", 0),
         "download_url": f"/api/convert-from-pdf/{api_slug}/download/{request_id}/{out}",
     }
+
+
+@router.post("/convert-from-pdf/pdf-to-markdown")
+async def pdf_to_markdown_direct(request: Request, file: UploadFile = File(...)):
+    """One-step conversion for the shared upload workspace.
+
+    Dedicated conversion screens can still use the upload/process/download flow.
+    """
+    upload = await _upload_pdf(request, file)
+    try:
+        return await _single_file_process(
+            pdf_to_markdown_service,
+            upload["request_id"],
+            upload["filename"],
+            "pdf-to-markdown",
+        )
+    except Exception as exc:
+        logger.error("PDF to Markdown error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 async def _single_file_download(request_id: str, filename: str, media: str):
@@ -820,6 +839,7 @@ async def pdf_to_heic_process(
 ):
     try:
         result = await pdf_to_heic_service.process(request_id, filename)
+        result["filename"] = result.get("output_filename")
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

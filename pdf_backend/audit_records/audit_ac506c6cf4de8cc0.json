@@ -1,0 +1,21 @@
+[
+  {
+    "event_id": "82a9aca2-be9b-44b2-ac17-63c2410092d0",
+    "event_type": "Copyright Notice Applied",
+    "timestamp": "2026-10-05T09:09:49.110118+00:00",
+    "document_name": "Untitled",
+    "document_hash": "ac506c6cf4de8cc07d17e4c610573ba247549fedc96ee5f19b818c6798ce229b",
+    "author": "",
+    "creator": "",
+    "description": "Stamped copyright notice: 'biswajit'",
+    "previous_value": null,
+    "new_value": {
+      "notice_text": "biswajit",
+      "position": "bottom",
+      "font_size": 12
+    },
+    "action_result": "success",
+    "source": "Copyright Notice Service",
+    "user_info": "Application user"
+  }
+]

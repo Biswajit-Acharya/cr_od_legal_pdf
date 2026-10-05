@@ -148,6 +148,45 @@ class BlockchainCopyrightRegistrationService:
             "message": "Blockchain registration preparation report generated.",
             "disclaimer": result["disclaimer"],
         }
+    def verify_ownership(self, pdf_bytes: bytes) -> Dict[str, Any]:
+        """Verify if the document has blockchain ownership metadata."""
+        self._validate_pdf(pdf_bytes)
+        try:
+            import fitz
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            metadata = doc.metadata or {}
+            
+            # Check for blockchain specific metadata
+            blockchain_tx = metadata.get("BlockchainTxId", "") or metadata.get("blockchain_tx_id", "") or metadata.get("tx_id", "")
+            owner = metadata.get("CopyrightOwner", "") or metadata.get("author", "") or metadata.get("creator", "")
+            network = metadata.get("BlockchainNetwork", "") or metadata.get("network", "")
+            
+            # Additional check: look through XMP metadata if available
+            xmp = doc.get_xml_metadata()
+            if xmp and not blockchain_tx:
+                if "BlockchainTxId" in xmp:
+                    blockchain_tx = "Found in XMP"
+                    
+            is_verified = bool(blockchain_tx)
+            
+            verification_result = {
+                "is_verified": is_verified,
+                "blockchain_tx_id": blockchain_tx if is_verified else None,
+                "owner": owner if owner else "Unknown",
+                "network": network if network else ("Ethereum" if is_verified else None),
+                "timestamp": metadata.get("creationDate", "") if is_verified else None,
+                "hash": self._compute_hash(pdf_bytes)
+            }
+            
+            return {
+                "status": "success",
+                "message": "Blockchain ownership verification successful." if is_verified else "No blockchain records found.",
+                "verification_result": verification_result
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in verifying ownership: {e}")
+            raise ValueError("Failed to analyze PDF for blockchain ownership.")
 
 
 blockchain_copyright_registration_service = BlockchainCopyrightRegistrationService()

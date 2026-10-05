@@ -4,12 +4,15 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const backendUrl = process.env.VITE_BACKEND_URL || 'http://localhost:8002'
+  const backendUrl = process.env.VITE_BACKEND_URL || 'http://127.0.0.1:8002'
   return {
     plugins: [
       react(),
       tailwindcss(),
     ],
+    css: {
+      postcss: false
+    },
     optimizeDeps: {
       include: ['uuid', 'pdf-lib', 'perfect-freehand', 'react-pdf']
     },

@@ -236,8 +236,8 @@ class JsonToPdfService:
         )
 
         # Override download URL for json-to-pdf routes
-        result["download_url"] = f"/api/convert/json-to-pdf/download/{request_id}/{result['filename']}"
-        result["view_url"] = f"/api/convert/json-to-pdf/view/{request_id}/{result['filename']}"
+        result["download_url"] = f"/api/convert-to-pdf/json-to-pdf/download/{request_id}/{result['filename']}"
+        result["view_url"] = f"/api/convert-to-pdf/json-to-pdf/view/{request_id}/{result['filename']}"
         
         return result
 

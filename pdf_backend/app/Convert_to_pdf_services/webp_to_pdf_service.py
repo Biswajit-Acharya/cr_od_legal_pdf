@@ -69,7 +69,7 @@ class WebpToPdfService:
                     "filename": filename,
                     "width": width,
                     "height": height,
-                    "url": f"/api/convert/webp-to-pdf/frame/{request_id}/{filename}"
+                    "url": f"/api/convert-to-pdf/webp-to-pdf/frame/{request_id}/{filename}"
                 }
         except Exception as e:
             logger.error(f"Error analyzing WebP: {e}")

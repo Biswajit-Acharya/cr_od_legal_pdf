@@ -349,8 +349,8 @@ class ZipToPdfService:
                 "filename": out_filename,
                 "pdf_filename": out_filename,
                 "page_count": merged_result["page_count"],
-                "download_url": f"/api/convert/zip-to-pdf/download/{request_id}/{out_filename}",
-                "view_url": f"/api/convert/zip-to-pdf/view/{request_id}",
+                "download_url": f"/api/convert-to-pdf/zip-to-pdf/download/{request_id}/{out_filename}",
+                "view_url": f"/api/convert-to-pdf/zip-to-pdf/view/{request_id}",
                 "converted_count": len(converted_pdf_paths),
                 "warnings": errors,
             }

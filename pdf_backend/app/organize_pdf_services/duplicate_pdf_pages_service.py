@@ -18,6 +18,7 @@ import fitz
 
 from app.core.paths import Paths
 from app.utils.filename import output_filename
+from app.pdf_security_services.protect_pdf_service import protect_pdf_service
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,12 @@ class DuplicatePDFPagesService:
         # 1. Validation
         analysis = PDFAnalysis()
         analysis.file_size = input_pdf.stat().st_size
+        
+        try:
+            protect_pdf_service.check_extraction_permission(input_pdf)
+        except Exception as e:
+            raise ValueError(str(e))
+            
         self._validate_pdf(input_pdf, analysis)
 
         if analysis.is_corrupted:

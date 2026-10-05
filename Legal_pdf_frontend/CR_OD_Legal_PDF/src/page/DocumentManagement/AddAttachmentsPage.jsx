@@ -10,7 +10,7 @@ import { Upload, Plus, FileText, Download, CheckCircle2, ArrowLeft, X, AlertCirc
 import apiClient from '../../api/apiClient';
 
 export default function AddAttachmentsPage({ onBack }) {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [stagedFiles, setStagedFiles] = useState([]);
   const [existingAttachments, setExistingAttachments] = useState([]);

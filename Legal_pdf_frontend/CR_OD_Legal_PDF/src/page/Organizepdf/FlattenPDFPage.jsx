@@ -13,6 +13,7 @@ export default function FlattenPDFPage() {
   const [isFlying, setIsFlying] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [finalDownloadUrl, setFinalDownloadUrl] = useState(null);
   
   const fileInputRef = useRef(null);
 
@@ -109,6 +110,10 @@ export default function FlattenPDFPage() {
     setIsSuccess(false);
     setIsProcessing(false);
     setPreviewUrl(null);
+    if (finalDownloadUrl) {
+        window.URL.revokeObjectURL(finalDownloadUrl);
+        setFinalDownloadUrl(null);
+    }
     setAnalysis({ isAnalyzing: false, forms: 0, comments: 0, highlights: 0, signatures: 0, completed: false });
   };
 
@@ -145,13 +150,7 @@ export default function FlattenPDFPage() {
             if (!fileRes.ok) throw new Error('Failed to download file');
             const blob = await fileRes.blob();
             const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'flattened.pdf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            setFinalDownloadUrl(url);
             setIsSuccess(true);
         } else {
             alert(data.detail || 'An error occurred while flattening the PDF.');
@@ -392,10 +391,10 @@ export default function FlattenPDFPage() {
               <h3 className="text-2xl font-bold text-slate-800 mb-3">Flatten Completed!</h3>
               <p className="text-slate-500 text-center mb-8 font-medium">Your PDF is now secure and non-editable.</p>
               
-              <button onClick={() => alert('Downloading...')} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-emerald-200 transition-all active:scale-95 flex justify-center items-center gap-2 mb-3">
+              <a href={finalDownloadUrl} download="flattened.pdf" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-emerald-200 transition-all active:scale-95 flex justify-center items-center gap-2 mb-3">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Download
-              </button>
+              </a>
               <button onClick={resetAll} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-slate-300 transition-all active:scale-95 flex justify-center items-center gap-2">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                 Flatten another file

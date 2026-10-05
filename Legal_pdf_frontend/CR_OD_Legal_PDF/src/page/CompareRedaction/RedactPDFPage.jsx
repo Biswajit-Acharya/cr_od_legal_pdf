@@ -110,6 +110,12 @@ export default function RedactPdfPage() {
                 body: JSON.stringify({ session_id: currentSessionId, ...payloadExt }),
             });
             const data = await res.json();
+            
+            if (!res.ok) {
+                alert('Error: ' + (data.detail || data.message || 'Failed to process request'));
+                return;
+            }
+            
             const items = data.candidates || data.matches || [];
             if (data.success && items.length) {
                 const toAdd = items.map(c => ({...c, selected: true, id: c.id || `auto_${Date.now()}_${Math.random()}`}));

@@ -34,22 +34,17 @@ export default function PDFtoSearchablePDFOCRPage({ onBack }) {
     setIsProcessing(true);
     setError('');
     try {
-      // Step 1: Upload the real File object
-      const uploadForm = new FormData();
-      uploadForm.append('file', file);
-      const uploadRes = await fetch(`${API_BASE_URL}/api/pdf/pdf-to-searchable/upload`, {
-        method: 'POST',
-        body: uploadForm,
-      });
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => ({}));
-        throw new Error(err.detail || `Upload failed (${uploadRes.status})`);
-      }
-      const uploadData = await uploadRes.json();
-
-      // Step 2: Process
       const processForm = new FormData();
       processForm.append('file', file);
+      processForm.append('language', 'english');
+      processForm.append('quality', 'balanced');
+      processForm.append('auto_rotate', 'true');
+      processForm.append('deskew', 'true');
+      processForm.append('clean_noise', 'true');
+      processForm.append('preserve_metadata', 'true');
+      processForm.append('skip_searchable', 'true');
+      processForm.append('force_ocr', 'false');
+
       const processRes = await fetch(`${API_BASE_URL}/api/pdf/pdf-to-searchable/process`, {
         method: 'POST',
         body: processForm,

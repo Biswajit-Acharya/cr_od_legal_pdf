@@ -52,7 +52,23 @@ MARGIN_PRESETS: Dict[str, float] = {
 EXIF_ORIENTATION_TAG = 274
 
 # Allowed extensions
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg"}
+ALLOWED_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".bmp", ".webp", ".gif", ".tif", ".tiff", ".heic", ".heif", ".ico", ".jfif", ".pjpeg", ".pjp"
+}
+
+
+def convert_any_image_to_pdf(input_path: Path, output_pdf_path: Path) -> bool:
+    """Convert any image file (JPG, PNG, Screenshot, WEBP, BMP, etc.) directly into a clean PDF page."""
+    try:
+        with Image.open(input_path) as img:
+            img = _apply_exif_orientation(img)
+            rgb_img = _to_rgb(img)
+            output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
+            rgb_img.save(str(output_pdf_path), "PDF", resolution=100.0)
+            return True
+    except Exception as e:
+        logger.error(f"Failed to convert image {input_path} to PDF: {e}")
+        return False
 
 
 # ---------------------------------------------------------------------------

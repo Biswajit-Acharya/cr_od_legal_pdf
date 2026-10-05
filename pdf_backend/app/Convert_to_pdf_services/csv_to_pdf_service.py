@@ -267,8 +267,8 @@ class CsvToPdfService:
         )
 
         # Fix download URL to point to our router endpoint instead of HTML's
-        result["download_url"] = f"/api/convert/csv-to-pdf/download/{request_id}/{result['filename']}"
-        result["view_url"] = f"/api/convert/csv-to-pdf/view/{request_id}/{result['filename']}"
+        result["download_url"] = f"/api/convert-to-pdf/csv-to-pdf/download/{request_id}/{result['filename']}"
+        result["view_url"] = f"/api/convert-to-pdf/csv-to-pdf/view/{request_id}/{result['filename']}"
         
         return result
 

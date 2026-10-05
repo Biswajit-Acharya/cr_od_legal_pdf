@@ -180,8 +180,28 @@ async def replace_pages_compat(file: UploadFile = File(...)):
 
 @router.post(f"{_organize_prefix}/organizepdf")
 async def organize_pdf_compat(file: UploadFile = File(...)):
+    import uuid
+    import shutil
+    from app.organize_pdf_services.organize_pdf_service import organize_pdf_service
     path = await _save_and_validate(file)
-    return {"success": True, "message": "PDF organized", "download_url": f"/api/organize_pdf_services/download/{path.name}"}
+    req_id = uuid.uuid4().hex[:8]
+    organize_pdf_service.upload_pdf_from_path(path, file.filename or "organized.pdf", req_id)
+    res = organize_pdf_service.process_organize(req_id)
+    
+    original_out_name = res.get("filename", f"organized_{path.name}")
+    out_name = f"{req_id}_{original_out_name}"
+    out_file = Path(settings.OUTPUT_DIR) / out_name
+    src_file = Paths.request_output(req_id) / original_out_name
+    if src_file.exists():
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src_file, out_file)
+        
+    return {
+        "success": True,
+        "message": "PDF organized successfully",
+        "filename": original_out_name,
+        "download_url": f"/api/organize_pdf_services/download/{out_name}"
+    }
 
 
 @router.post(f"{_organize_prefix}/pdftoindividualspage")
@@ -212,16 +232,47 @@ async def pdf_to_single_long_image_compat(file: UploadFile = File(...)):
 
 @router.post(f"{_organize_prefix}/pdftoeditablepdf")
 async def pdf_to_editable_compat(file: UploadFile = File(...)):
+    import uuid
+    import shutil
+    from app.organize_pdf_services.pdf_to_searchable_service import _pdf_to_searchable_service
+    from app.core.paths import Paths
     path = await _save_and_validate(file)
-    return {"success": True, "message": "PDF made editable", "download_url": f"/api/organize_pdf_services/download/{path.name}"}
+    req_id = uuid.uuid4().hex[:8]
+    res = await _pdf_to_searchable_service.process(path, request_id=req_id)
+    out_name = f"{req_id}_{res.filename}"
+    out_file = Path(settings.OUTPUT_DIR) / out_name
+    src_file = Paths.request_output(req_id) / res.filename
+    if src_file.exists():
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src_file, out_file)
+    return {
+        "success": res.success,
+        "message": res.message,
+        "filename": res.filename,
+        "download_url": f"/api/organize_pdf_services/download/{out_name}"
+    }
 
 
 @router.post(f"{_organize_prefix}/pdftosearchablepdfocr")
 async def pdf_to_searchable_ocr_compat(file: UploadFile = File(...)):
+    import uuid
+    import shutil
     from app.organize_pdf_services.pdf_to_searchable_service import _pdf_to_searchable_service
     path = await _save_and_validate(file)
-    result = _pdf_to_searchable_service(path)
-    return result
+    req_id = uuid.uuid4().hex[:8]
+    res = await _pdf_to_searchable_service.process(path, request_id=req_id)
+    out_name = f"{req_id}_{res.filename}"
+    out_file = Path(settings.OUTPUT_DIR) / out_name
+    src_file = Paths.request_output(req_id) / res.filename
+    if src_file.exists():
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src_file, out_file)
+    return {
+        "success": res.success,
+        "message": res.message,
+        "filename": res.filename,
+        "download_url": f"/api/organize_pdf_services/download/{out_name}"
+    }
 
 
 @router.post(f"{_organize_prefix}/flatten")
@@ -244,10 +295,24 @@ async def repair_compat(file: UploadFile = File(...)):
 
 @router.post(f"{_organize_prefix}/ocr")
 async def ocr_compat(file: UploadFile = File(...)):
+    import uuid
+    import shutil
     from app.organize_pdf_services.pdf_to_searchable_service import _pdf_to_searchable_service
     path = await _save_and_validate(file)
-    result = _pdf_to_searchable_service(path)
-    return result
+    req_id = uuid.uuid4().hex[:8]
+    res = await _pdf_to_searchable_service.process(path, request_id=req_id)
+    out_name = f"{req_id}_{res.filename}"
+    out_file = Path(settings.OUTPUT_DIR) / out_name
+    src_file = Paths.request_output(req_id) / res.filename
+    if src_file.exists():
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src_file, out_file)
+    return {
+        "success": res.success,
+        "message": res.message,
+        "filename": res.filename,
+        "download_url": f"/api/organize_pdf_services/download/{out_name}"
+    }
 
 
 @router.post(f"{_organize_prefix}/scantopdf")

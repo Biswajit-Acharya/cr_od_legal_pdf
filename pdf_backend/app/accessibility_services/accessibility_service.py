@@ -861,6 +861,7 @@ class AccessibilityService:
         
         # Get target font size
         target_size = int(payload.get("target_fontsize_pt", 20))
+        font_size_mult = target_size / 14
         text_color = payload.get("text_color_hex", "#000000")
         
         # Calculate new font sizes

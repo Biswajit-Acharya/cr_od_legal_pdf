@@ -228,7 +228,7 @@ class HtmlToPdfService:
             "success": True,
             "request_id": request_id,
             "filename": final_filename,
-            "download_url": f"/api/convert/html-to-pdf/download/{request_id}/{final_filename}"
+            "download_url": f"/api/convert-to-pdf/html-to-pdf/download/{request_id}/{final_filename}"
         }
 
 html_to_pdf_service = HtmlToPdfService()

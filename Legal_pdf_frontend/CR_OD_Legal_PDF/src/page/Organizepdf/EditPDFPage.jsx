@@ -4,6 +4,10 @@ import { pdfjs } from 'react-pdf';
 // Define worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+// Keep requests relative in local development (Vite proxies /api to FastAPI)
+// and allow deployments to provide an explicit backend base URL.
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
+
 export default function EditPdfPage() {
   const [file, setFile] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
@@ -380,14 +384,17 @@ export default function EditPdfPage() {
       for (const [pNum, pJson] of Object.entries(pageEdits.current)) {
           if (pJson && pJson.objects && pJson.objects.length > 0) {
               hasEdits = true;
-              pJson.objects.forEach(obj => {
+              // Fabric's canvas state must remain untouched. Mutating it here
+              // caused every subsequent save attempt to shrink/reposition edits.
+              const pageObjects = structuredClone(pJson.objects);
+              pageObjects.forEach(obj => {
                   obj.left /= 1.5; obj.top /= 1.5;
                   obj.scaleX = (obj.scaleX || 1) / 1.5; obj.scaleY = (obj.scaleY || 1) / 1.5;
                   if(obj.strokeWidth) obj.strokeWidth /= 1.5;
                   if(obj.radius) obj.radius /= 1.5; 
                   if (obj.path) { obj.path.forEach(cmd => { for (let i = 1; i < cmd.length; i++) cmd[i] /= 1.5; }); }
               });
-              normalizedEdits[pNum] = pJson.objects;
+              normalizedEdits[pNum] = pageObjects;
           }
       }
       
@@ -403,11 +410,13 @@ export default function EditPdfPage() {
           const data = await res.json();
           if (res.ok) {
               const a = document.createElement('a');
-              a.href = data.download_url;
+              a.href = `${API_BASE_URL}${data.download_url}`;
               a.download = data.filename;
               document.body.appendChild(a); a.click(); document.body.removeChild(a);
           } else { alert(data.detail || 'Error saving PDF'); }
-      } catch (err) { alert('Network error'); } finally { setIsProcessing(false); }
+      } catch (err) {
+          alert(`Unable to save PDF: ${err.message || 'Network error'}`);
+      } finally { setIsProcessing(false); }
   };
   
   const resetAll = () => {

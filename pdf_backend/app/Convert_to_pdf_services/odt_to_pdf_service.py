@@ -142,8 +142,8 @@ class OdtToPdfService:
                 "success": True,
                 "request_id": request_id,
                 "filename": expected_pdf_name,
-                "download_url": f"/api/convert/odt-to-pdf/download/{request_id}/{expected_pdf_name}",
-                "view_url": f"/api/convert/odt-to-pdf/view/{request_id}"
+                "download_url": f"/api/convert-to-pdf/odt-to-pdf/download/{request_id}/{expected_pdf_name}",
+                "view_url": f"/api/convert-to-pdf/odt-to-pdf/view/{request_id}"
             }
             
         finally:

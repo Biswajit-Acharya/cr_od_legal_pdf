@@ -1661,3 +1661,21 @@ async def blockchain_report(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Blockchain report error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Unable to generate blockchain report.")
+
+
+# ── Blockchain Ownership Verification ────────────────────────────────────────
+
+
+@router.post("/blockchain-ownership-verification/process")
+async def blockchain_ownership_verification_process(file: UploadFile = File(...)):
+    """Verify blockchain ownership metadata in a PDF."""
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="No PDF file provided.")
+    try:
+        pdf_bytes = await file.read()
+        return blockchain_copyright_registration_service.verify_ownership(pdf_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Blockchain ownership verification error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Unable to verify blockchain ownership.")

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file AISmartFeatures.jsx
  * @description AI & Smart Features sub-page for CR OD Legal PDF.
  *
@@ -15,6 +15,7 @@
 import React from 'react';
 import SlideInText from '../../components/SlideInText';
 import ToolWorkspace from '../ToolWorkspace';
+import AISummarizerPage from './AISummarizerPage';
 import {
   ArrowRight,
   Sparkles,
@@ -672,6 +673,9 @@ export function AISmartFeaturesPage({ onBack, searchQuery = "" }) {
   }, []);
 
   if (selectedTool) {
+    if (selectedTool.id === 'ai-summarizer') {
+      return <AISummarizerPage tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
+    }
     return <ToolWorkspace tool={selectedTool} onBack={() => { setSelectedTool(null); const parentHash = window.location.hash.split('/')[0]; window.history.pushState({ page: parentHash.replace('#', '') }, '', parentHash); window.scrollTo(0, 0); }} />;
   }
 

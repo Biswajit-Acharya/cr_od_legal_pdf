@@ -68,6 +68,27 @@ export default function PrintBookletPage({ onBack }) {
     setError('');
   };
 
+  const buildFormData = () => {
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+    fd.append('page_range', pageRange);
+    fd.append('paper_size', paperSize);
+    fd.append('orientation', orientation);
+    fd.append('binding', binding);
+    fd.append('duplex', duplex);
+    fd.append('margin_inner_mm', marginInner);
+    fd.append('margin_outer_mm', marginOuter);
+    fd.append('gutter_mm', gutter);
+    fd.append('bleed_mm', bleed);
+    if (paperSize === 'custom') {
+      fd.append('custom_w', customW);
+      fd.append('custom_h', customH);
+    }
+    fd.append('show_borders', showBorders);
+    fd.append('show_crop_marks', showCropMarks);
+    return fd;
+  };
+
   const handlePreview = async () => {
     if (!selectedFile) return;
 
@@ -76,26 +97,21 @@ export default function PrintBookletPage({ onBack }) {
     setPreviewData(null);
     setDownloadUrl('');
 
-    // Simulated network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     try {
-      // Mock Data Generation
-      setPreviewData({
-        original_pages: 12,
-        padded_pages: 12,
-        blank_pages: 0,
-        sheets: 3,
-        paper_size: paperSize,
-        binding: binding,
-        sheet_layouts: [
-          { sheet_number: 1, front: { left: 11, right: 0 }, back: { left: 1, right: 10 } },
-          { sheet_number: 2, front: { left: 9, right: 2 }, back: { left: 3, right: 8 } },
-          { sheet_number: 3, front: { left: 7, right: 4 }, back: { left: 5, right: 6 } },
-        ]
-      });
+      const data = await apiClient.uploadFiles('/api/document-management/print-booklet/preview', buildFormData());
+      if (data) {
+        if (data.booklet) {
+          setPreviewData({
+            ...data.booklet,
+            paper_size: data.paper_size || paperSize,
+            binding: data.binding || binding
+          });
+        } else {
+          setPreviewData(data);
+        }
+      }
     } catch (err) {
-      setError('Error generating preview: ' + err.message);
+      setError(err.message || 'Error generating preview.');
     } finally {
       setIsProcessing(false);
     }
@@ -108,13 +124,13 @@ export default function PrintBookletPage({ onBack }) {
     setError('');
     setDownloadUrl('');
 
-    // Simulated network delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
     try {
-      setDownloadUrl('#mock-download');
+      const data = await apiClient.uploadFiles('/api/document-management/print-booklet/generate', buildFormData());
+      if (data && data.download_url) {
+        setDownloadUrl(data.download_url);
+      }
     } catch (err) {
-      setError('Error generating booklet: ' + err.message);
+      setError(err.message || 'Error generating booklet.');
     } finally {
       setIsProcessing(false);
     }
@@ -320,83 +336,7 @@ export default function PrintBookletPage({ onBack }) {
               </div>
             </div>
 
-            {/* Margins & Options */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-              <h3 className="text-lg font-bold text-[#1e2a52] mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Maximize className="w-5 h-5" />
-                Margins & Options
-              </h3>
 
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Inner (mm)</label>
-                  <input
-                    type="number"
-                    value={marginInner}
-                    onChange={(e) => setMarginInner(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1e2a52] outline-none text-sm font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Outer (mm)</label>
-                  <input
-                    type="number"
-                    value={marginOuter}
-                    onChange={(e) => setMarginOuter(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1e2a52] outline-none text-sm font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Gutter (mm)</label>
-                  <input
-                    type="number"
-                    value={gutter}
-                    onChange={(e) => setGutter(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1e2a52] outline-none text-sm font-medium"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                 <div className="col-span-1">
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Bleed (mm)</label>
-                  <input
-                    type="number"
-                    value={bleed}
-                    onChange={(e) => setBleed(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-[#1e2a52] outline-none text-sm font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4 border-t border-slate-100">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showBorders}
-                    onChange={(e) => setShowBorders(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-[#1e2a52] focus:ring-[#1e2a52]"
-                  />
-                  <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                    <Frame className="w-4 h-4 text-slate-400" />
-                    Show page borders
-                  </span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showCropMarks}
-                    onChange={(e) => setShowCropMarks(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-[#1e2a52] focus:ring-[#1e2a52]"
-                  />
-                  <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                    <Crop className="w-4 h-4 text-slate-400" />
-                    Show crop marks
-                  </span>
-                </label>
-              </div>
-
-            </div>
           </div>
 
           {/* Right Column: Preview & Actions */}

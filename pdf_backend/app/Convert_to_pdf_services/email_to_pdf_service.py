@@ -782,8 +782,8 @@ class EmailToPdfService:
                         "from": ed.from_address,
                         "date": ed.date_formatted or ed.date,
                         "attachment_count": len(ed.attachments),
-                        "download_url": f"/api/convert/email-to-pdf/download/{request_id}/{pdf_name}",
-                        "view_url": f"/api/convert/email-to-pdf/view/{request_id}/{pdf_name}",
+                        "download_url": f"/api/convert-to-pdf/email-to-pdf/download/{request_id}/{pdf_name}",
+                        "view_url": f"/api/convert-to-pdf/email-to-pdf/view/{request_id}/{pdf_name}",
                     })
                 else:
                     pdf_names = []
@@ -804,7 +804,7 @@ class EmailToPdfService:
                         "email_count": len(emails),
                         "pdf_filenames": pdf_names,
                         "message": f"Converted {len(emails)} emails into {len(pdf_names)} separate PDFs.",
-                        "download_url": f"/api/convert/email-to-pdf/download-zip/{request_id}",
+                        "download_url": f"/api/convert-to-pdf/email-to-pdf/download-zip/{request_id}",
                     })
 
             except ValueError as e:
@@ -876,8 +876,8 @@ class EmailToPdfService:
                     "status": "success",
                     "email_count": len(emails),
                     "message": f"Combined {len(emails)} emails into one PDF.",
-                    "download_url": f"/api/convert/email-to-pdf/download/{request_id}/{pdf_name}",
-                    "view_url": f"/api/convert/email-to-pdf/view/{request_id}/{pdf_name}",
+                    "download_url": f"/api/convert-to-pdf/email-to-pdf/download/{request_id}/{pdf_name}",
+                    "view_url": f"/api/convert-to-pdf/email-to-pdf/view/{request_id}/{pdf_name}",
                 })
 
             except ValueError as e:

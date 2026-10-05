@@ -9,7 +9,7 @@ export default function PDFtoSingleLongImagePage() {
   const [errorMsg, setErrorMsg] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -75,7 +75,12 @@ export default function PDFtoSingleLongImagePage() {
       if (!dlUrl) throw new Error('Download URL not provided by server.');
 
       // 3. Prepare Download
-      setDownloadUrl(`${API_BASE_URL}${dlUrl}`);
+      const blobRes = await fetch(`${API_BASE_URL}${dlUrl}`);
+      if (!blobRes.ok) throw new Error('Failed to fetch result file.');
+      const blob = await blobRes.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      setDownloadUrl(blobUrl);
+      setPreviewBlobUrl(blobUrl);
       setIsDone(true);
       setShowPreview(true);
     } catch (err) {
@@ -90,7 +95,9 @@ export default function PDFtoSingleLongImagePage() {
     setIsProcessing(false);
     setIsDone(false);
     setErrorMsg(null);
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setDownloadUrl(null);
+    setPreviewBlobUrl(null);
     setShowPreview(false);
   };
 
@@ -174,11 +181,11 @@ export default function PDFtoSingleLongImagePage() {
             </div>
 
             {showPreview && (
-              <div className="w-full h-[600px] mt-8 border border-slate-300 rounded-xl overflow-hidden shadow-inner bg-white">
-                <iframe
-                  src={downloadUrl}
-                  className="w-full h-full"
-                  title="PDF Preview"
+              <div className="w-full mt-8 border border-slate-300 rounded-xl overflow-hidden shadow-inner bg-white p-4">
+                <img
+                  src={previewBlobUrl}
+                  alt="Long Image Preview"
+                  className="w-full h-auto object-contain"
                 />
               </div>
             )}

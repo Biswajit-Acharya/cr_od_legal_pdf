@@ -259,8 +259,8 @@ class WebpageToPdfService:
             "request_id": request_id,
             "filename": filename,
             "page_title": page_title,
-            "download_url": f"/api/convert/webpage-to-pdf/download/{request_id}/{filename}",
-            "view_url": f"/api/convert/webpage-to-pdf/view/{request_id}",
+            "download_url": f"/api/convert-to-pdf/webpage-to-pdf/download/{request_id}/{filename}",
+            "view_url": f"/api/convert-to-pdf/webpage-to-pdf/view/{request_id}",
         }
 
     # ── Batch conversion ───────────────────────────────────────────
@@ -327,7 +327,7 @@ class WebpageToPdfService:
             "results": results,
             "zip_filename": zip_filename,
             "zip_download_url": (
-                f"/api/convert/webpage-to-pdf/download-zip/{request_id}"
+                f"/api/convert-to-pdf/webpage-to-pdf/download-zip/{request_id}"
                 if zip_filename else None
             ),
         }
