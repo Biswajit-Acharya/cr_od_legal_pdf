@@ -4,7 +4,10 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import PyKCS11
+try:
+    import PyKCS11
+except ImportError:
+    PyKCS11 = None
 from pyhanko.sign import signers, fields
 from pyhanko.pdf_utils import text, incremental_writer
 from pyhanko.pdf_utils.reader import PdfFileReader
