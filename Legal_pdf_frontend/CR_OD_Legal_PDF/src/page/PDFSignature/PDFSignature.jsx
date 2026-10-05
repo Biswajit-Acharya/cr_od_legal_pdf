@@ -19,7 +19,7 @@ import ToolWorkspace from '../ToolWorkspace';
 import PDFSignPage from './PDFSignPage';
 import DigitalSignPage from './DigitalSignPage';
 import ESignPage from './ESignPage';
-import UsbTokenSignaturePage from './UsbTokenSignaturePage';
+import USBTokenSignaturePage from './USBTokenSignaturePage';
 import {
   ArrowRight,
   PenTool,
@@ -773,7 +773,7 @@ export function PDFSignaturePage({ onBack, searchQuery = "" }) {
       return <ESignPage tool={selectedTool} onBack={handleBack} />;
     }
     if (selectedTool.id === 'usb-token-signature') {
-      return <UsbTokenSignaturePage tool={selectedTool} onBack={handleBack} />;
+      return <USBTokenSignaturePage tool={selectedTool} onBack={handleBack} />;
     }
     return <ToolWorkspace tool={selectedTool} onBack={handleBack} />;
   }
