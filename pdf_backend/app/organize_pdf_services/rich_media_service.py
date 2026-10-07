@@ -463,11 +463,11 @@ class RichMediaService:
                 zoom = min(800 / page.rect.width, 800 / page.rect.height, 2.0)
                 mat = fitz.Matrix(zoom, zoom)
                 pix = page.get_pixmap(matrix=mat, alpha=False)
-                poster_bytes = pix.tobytes("png")
+                poster_bytes = pix.tobytes("jpeg")
                 doc.close()
 
                 poster_id = str(uuid.uuid4())[:8]
-                poster_name = f"poster_{media_id}_{poster_id}.png"
+                poster_name = f"poster_{media_id}_{poster_id}.jpg"
                 poster_dest = Paths.request_upload(request_id) / poster_name
                 poster_dest.write_bytes(poster_bytes)
             except Exception:
@@ -501,9 +501,9 @@ class RichMediaService:
                 draw.text(((320 - 36) // 2, 60), icon, fill=(80, 80, 80), font=icon_font)
 
                 poster_id = str(uuid.uuid4())[:8]
-                poster_name = f"poster_{media_id}_{poster_id}.png"
+                poster_name = f"poster_{media_id}_{poster_id}.jpg"
                 poster_dest = Paths.request_upload(request_id) / poster_name
-                img.save(str(poster_dest), "PNG")
+                img.save(str(poster_dest), "JPEG", quality=85)
             except Exception as e:
                 raise RichMediaError(
                     f"Failed to generate poster: {e}",
@@ -800,6 +800,9 @@ class RichMediaService:
             flashvars.append("showControls=false")
         else:
             flashvars.append("showControls=true")
+            
+        flashvars.append(f"source={filename}")
+        flashvars.append("scaleMode=letterbox")
         flashvars_str = "&".join(flashvars)
 
         rm_params = pdf.make_indirect(pikepdf.Dictionary({
@@ -810,7 +813,7 @@ class RichMediaService:
         rm_instance = pikepdf.Dictionary({
             "/Type": pikepdf.Name("/RichMediaInstance"),
             "/Subtype": instance_subtype,
-            "/Asset": file_spec,
+            "/Asset": pikepdf.String(filename),
             "/Params": rm_params
         })
 

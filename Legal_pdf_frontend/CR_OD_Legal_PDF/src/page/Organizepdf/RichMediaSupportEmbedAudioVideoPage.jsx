@@ -1,4 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 export default function RichMediaSupportEmbedAudioVideoPage() {
   const [pdfFile, setPdfFile] = useState(null);
@@ -27,6 +30,101 @@ export default function RichMediaSupportEmbedAudioVideoPage() {
   
   const pdfInputRef = useRef(null);
   const mediaInputRef = useRef(null);
+
+  const [downloadUrl, setDownloadUrl] = useState(null);
+  const [downloadFilename, setDownloadFilename] = useState('');
+  
+  const [numPages, setNumPages] = useState(null);
+  const [pdfDimensions, setPdfDimensions] = useState({ width: 0, height: 0 });
+  const [renderScale, setRenderScale] = useState(1);
+  const containerRef = useRef(null);
+
+  // Drag logic
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+  const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0 });
+
+  // Sync dragPos to percentages
+  useEffect(() => {
+    if (pdfDimensions.width > 0 && containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const scale = containerWidth / pdfDimensions.width;
+        
+        if (isDraggingMedia) {
+            const xPercent = (dragPos.x / containerWidth) * 100;
+            const yPercent = (dragPos.y / (pdfDimensions.height * scale)) * 100;
+            setPosX(Math.min(Math.max(xPercent, 0), 100).toFixed(1));
+            setPosY(Math.min(Math.max(yPercent, 0), 100).toFixed(1));
+        }
+    }
+  }, [dragPos, isDraggingMedia, pdfDimensions]);
+
+  // Sync percentages to dragPos if manual entry
+  useEffect(() => {
+    if (!isDraggingMedia && pdfDimensions.width > 0 && containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const scale = containerWidth / pdfDimensions.width;
+        setDragPos({
+            x: (posX / 100) * containerWidth,
+            y: (posY / 100) * (pdfDimensions.height * scale)
+        });
+    }
+  }, [posX, posY, pdfDimensions, isDraggingMedia]);
+
+  const handlePageLoad = (page) => {
+    const { originalWidth, originalHeight } = page;
+    setPdfDimensions({ width: originalWidth, height: originalHeight });
+    
+    if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const scale = containerWidth / originalWidth;
+        setRenderScale(scale);
+        setDragPos({ x: containerWidth / 2, y: (originalHeight * scale) / 2 });
+        setPosX(50);
+        setPosY(50);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    setIsDraggingMedia(true);
+    dragRef.current.startX = e.clientX;
+    dragRef.current.startY = e.clientY;
+    dragRef.current.currentX = dragPos.x;
+    dragRef.current.currentY = dragPos.y;
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDraggingMedia) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    
+    let newX = dragRef.current.currentX + dx;
+    let newY = dragRef.current.currentY + dy;
+    
+    if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        newX = Math.max(0, Math.min(newX, rect.width));
+        newY = Math.max(0, Math.min(newY, rect.height));
+    }
+    setDragPos({ x: newX, y: newY });
+  }, [isDraggingMedia]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDraggingMedia(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDraggingMedia) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingMedia, handleMouseMove, handleMouseUp]);
 
   // Drag and Drop (PDF)
   const handleDragOver = (e) => {
@@ -98,17 +196,22 @@ export default function RichMediaSupportEmbedAudioVideoPage() {
         setIsProcessing(true);
         
         try {
-            const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+            const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
 
-            // Step 1: Upload PDF
+            // Step 1: Create session
+            const createRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/create`, { method: 'POST' });
+            if (!createRes.ok) throw new Error('Failed to create session');
+            const sessionData = await createRes.json();
+            const requestId = sessionData.request_id;
+
+            // Step 2: Upload PDF
             const pdfForm = new FormData();
             pdfForm.append('file', pdfFile);
+            pdfForm.append('request_id', requestId);
             const pdfRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/upload-pdf`, { method: 'POST', body: pdfForm });
             if (!pdfRes.ok) throw new Error('PDF upload failed');
-            const pdfData = await pdfRes.json();
-            const requestId = pdfData.request_id;
 
-            // Step 2: Upload each media file
+            // Step 3: Upload each media file and add placement
             for (const mediaFile of mediaFiles) {
                 const mediaForm = new FormData();
                 mediaForm.append('file', mediaFile);
@@ -116,11 +219,21 @@ export default function RichMediaSupportEmbedAudioVideoPage() {
                 const mediaRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/upload-media`, { method: 'POST', body: mediaForm });
                 if (!mediaRes.ok) throw new Error(`Media upload failed for ${mediaFile.name}`);
                 const mediaData = await mediaRes.json();
+                
+                // Step 3.5: Auto-generate poster to prevent black box in Adobe Acrobat
+                const posterForm = new FormData();
+                posterForm.append('request_id', requestId);
+                posterForm.append('media_id', mediaData.media.media_id);
+                try {
+                    await fetch(`${API_BASE_URL}/api/pdf/rich-media/auto-poster`, { method: 'POST', body: posterForm });
+                } catch (e) {
+                    console.warn("Auto-poster generation failed, proceeding without poster", e);
+                }
 
-                // Step 3: Add placement for this media
+                // Step 4: Add placement for this media
                 const placementForm = new FormData();
                 placementForm.append('request_id', requestId);
-                placementForm.append('media_id', mediaData.media_id);
+                placementForm.append('media_id', mediaData.media.media_id);
                 placementForm.append('page_index', 0);
                 placementForm.append('x', posX);
                 placementForm.append('y', posY);
@@ -129,42 +242,54 @@ export default function RichMediaSupportEmbedAudioVideoPage() {
                 placementForm.append('autoplay', autoplay);
                 placementForm.append('loop', loop);
                 placementForm.append('muted', muted);
-                placementForm.append('volume', volume);
-                await fetch(`${API_BASE_URL}/api/pdf/rich-media/add-placement`, { method: 'POST', body: placementForm });
+                placementForm.append('show_controls', controls);
+                placementForm.append('play_on_click', true);
+                
+                const placeRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/add-placement`, { method: 'POST', body: placementForm });
+                if (!placeRes.ok) {
+                   const errData = await placeRes.json().catch(()=>({}));
+                   throw new Error(`Placement failed: ${errData.detail || placeRes.statusText}`);
+                }
             }
 
-            // Step 4: Create/process PDF
-            const createForm = new FormData();
-            createForm.append('request_id', requestId);
-            const createRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/create`, { method: 'POST', body: createForm });
-            if (!createRes.ok) throw new Error('Failed to create rich media PDF');
-            const createData = await createRes.json();
-
-            // Step 5: Download
-            const filename = createData.filename || 'rich_media.pdf';
-            const fileRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/download/${requestId}/${filename}`);
-            if (!fileRes.ok) throw new Error('Download failed');
-            const blob = await fileRes.blob();
-            const dlUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = dlUrl;
-            link.download = `rich_media_${pdfFile.name}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(dlUrl);
+            // Step 5: Process PDF
+            const processForm = new FormData();
+            processForm.append('request_id', requestId);
+            const processRes = await fetch(`${API_BASE_URL}/api/pdf/rich-media/process`, { method: 'POST', body: processForm });
+            if (!processRes.ok) {
+                const errData = await processRes.json().catch(()=>({}));
+                throw new Error(`Processing failed: ${errData.detail || processRes.statusText}`);
+            }
+            const processData = await processRes.json();
+            
+            const filename = processData.filename || 'rich_media.pdf';
+            const dl = `${API_BASE_URL}/api/pdf/rich-media/download/${requestId}/${filename}`;
+            setDownloadUrl(dl);
+            setDownloadFilename(`rich_media_${pdfFile.name}`);
 
             setIsSuccess(true);
         } catch (err) {
             console.error('Rich media API error:', err);
-            // Fallback: show success anyway with mock
-            setIsSuccess(true);
+            alert('Error processing file: ' + err.message);
         } finally {
             setIsProcessing(false);
             setIsFlying(false);
         }
     }, 500);
   };
+  
+  const handleRealDownload = () => {
+    if (downloadUrl) {
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = downloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen p-4 sm:p-8 bg-transparent relative z-20 min-h-screen flex flex-col items-center font-sans">
@@ -238,12 +363,38 @@ export default function RichMediaSupportEmbedAudioVideoPage() {
 
               {/* Preview UI */}
               {pdfFile && (
-                <div className="preview-section mt-6 rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden h-[300px] sm:h-[400px] lg:h-[500px] flex flex-col items-center justify-center shadow-inner w-full relative">
-                  {previewUrl ? (
-                    <iframe src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} className="w-full h-full border-none bg-transparent" title="PDF Preview" />
-                  ) : (
-                    <p className="preview-empty text-slate-400 font-medium p-6 text-center">Loading preview...</p>
-                  )}
+                                <div className="preview-section mt-6 rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden relative shadow-inner w-full flex justify-center" ref={containerRef}>
+                    <Document file={pdfFile} onLoadSuccess={({numPages}) => setNumPages(numPages)}>
+                        <Page 
+                            pageNumber={1} 
+                            width={containerRef.current?.clientWidth || 400} 
+                            onLoadSuccess={handlePageLoad} 
+                            renderTextLayer={false} 
+                            renderAnnotationLayer={false}
+                        />
+                    </Document>
+                    
+                    {/* Draggable Media Overlay */}
+                    {mediaFiles.length > 0 && pdfDimensions.width > 0 && (
+                        <div 
+                            onMouseDown={handleMouseDown}
+                            className={`absolute border-2 ${isDraggingMedia ? 'border-indigo-500 bg-indigo-500/20 shadow-lg scale-105' : 'border-indigo-400 border-dashed bg-indigo-400/10'} rounded cursor-move flex flex-col items-center justify-center transition-all`}
+                            style={{
+                                left: `${dragPos.x}px`,
+                                top: `${dragPos.y}px`,
+                                width: `${sizeW}%`,
+                                height: `${sizeH}%`,
+                                transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                            }}
+                        >
+                            <span className="text-4xl opacity-70 pointer-events-none">
+                                {mediaFiles[mediaFiles.length-1]?.type.includes('video') ? '🎬' : '🎵'}
+                            </span>
+                            <span className="text-xs font-bold text-indigo-700 bg-white/80 px-2 py-0.5 rounded-full mt-2 pointer-events-none shadow-sm whitespace-nowrap">
+                              Drag to position
+                            </span>
+                        </div>
+                    )}
                 </div>
               )}
             </div>
@@ -411,7 +562,7 @@ export default function RichMediaSupportEmbedAudioVideoPage() {
               <h3 className="text-2xl font-bold text-slate-800 mb-3">PDF Ready!</h3>
               <p className="text-slate-500 text-center mb-8 font-medium">Successfully embedded {mediaFiles.length} media items into your PDF.</p>
               
-              <button onClick={() => alert('Downloading...')} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-emerald-200 transition-all active:scale-95 flex justify-center items-center gap-2 mb-3">
+              <button onClick={handleRealDownload} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-emerald-200 transition-all active:scale-95 flex justify-center items-center gap-2 mb-3">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Download
               </button>
