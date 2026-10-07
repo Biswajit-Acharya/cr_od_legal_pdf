@@ -28,8 +28,15 @@ export default function XMLtoPDFPage({ onBack }) {
 
   const addFile = (newFiles) => {
     setError('');
-    const f = Array.from(newFiles)[0];
+        const f = Array.from(newFiles)[0];
     if (!f) return;
+    
+    const fileExt = '.' + f.name.split('.').pop().toLowerCase();
+    const allowedExts = ['.xml'];
+    if (!allowedExts.includes(fileExt)) {
+      setError(`Invalid file type. Please upload a valid ${allowedExts.join(', ')} file.`);
+      return;
+    }
     setFile(f);
     setIsDone(false);
     setDownloadBlob(null);

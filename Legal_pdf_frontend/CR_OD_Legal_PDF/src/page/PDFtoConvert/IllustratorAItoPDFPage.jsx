@@ -38,8 +38,15 @@ export default function IllustratorAItoPDFPage({ onBack }) {
 
   const addFile = (newFiles) => {
     setError('');
-    const f = Array.from(newFiles)[0];
+        const f = Array.from(newFiles)[0];
     if (!f) return;
+    
+    const fileExt = '.' + f.name.split('.').pop().toLowerCase();
+    const allowedExts = ['.ai'];
+    if (!allowedExts.includes(fileExt)) {
+      setError(`Invalid file type. Please upload a valid ${allowedExts.join(', ')} file.`);
+      return;
+    }
     setFile(f);
     setIsDone(false);
     setDownloadBlob(null);
@@ -151,7 +158,7 @@ export default function IllustratorAItoPDFPage({ onBack }) {
               onClick={() => inputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all ${isDragging ? 'border-[#1e2a52] bg-[#e8f0e2]' : 'border-[#1e2a52]/30 bg-[#f8faf7] hover:border-[#1e2a52] hover:bg-[#eff4ea]'}`}
             >
-              <input ref={inputRef} type="file" className="hidden" onChange={handleFileChange} />
+              <input ref={inputRef} type="file" className="hidden" accept="application/postscript" onChange={handleFileChange} />
               <div className="w-16 h-16 bg-[#1e2a52]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Upload className="w-8 h-8 text-[#1e2a52]" />
               </div>
