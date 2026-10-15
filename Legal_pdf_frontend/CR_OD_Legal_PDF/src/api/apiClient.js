@@ -2,21 +2,9 @@
 // All requests use relative URLs — Vite proxy forwards to backend automatically.
 // Backend can run on ANY port — just set VITE_BACKEND_URL in .env
 
-const getCleanApiBase = () => {
-    // When running in the browser on Vercel, use relative URLs ('')
-    // Vercel rewrites in vercel.json will proxy all /api requests to Render server-side
-    // This completely eliminates any browser CORS preflight blocking!
-    if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1')) {
-        return '';
-    }
-    let url = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
-    if (url.includes('crodlegalpdf.onrender.com')) {
-        url = 'https://cr-od-legal-pdf-backend.onrender.com';
-    }
-    return url.replace(/\/+$/, '');
-};
-
-export const API_BASE_URL = getCleanApiBase();
+// All requests use relative URLs — Vite proxy forwards in dev, Vercel rewrites forward in production.
+// This completely eliminates cross-origin CORS errors.
+export const API_BASE_URL = '';
 const DEFAULT_TIMEOUT_MS = 90000; // 90 seconds (allows for Render cold start ~50s)
 
 /**
