@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, Download, CheckCircle2, ArrowLeft, ArrowRight, X, AlertCircle } from 'lucide-react';
 import { getToolApiConfig } from '../config/toolApiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '';
+import { API_BASE_URL } from '../api/apiClient';
 
 function getAcceptedTypes(toolName) {
   const name = (toolName || '').toLowerCase();

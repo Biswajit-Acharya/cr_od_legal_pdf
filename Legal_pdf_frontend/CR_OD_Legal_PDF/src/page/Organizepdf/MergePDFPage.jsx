@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { uploadFiles } from '../../api/apiClient';
+import { uploadFiles, getFullUrl } from '../../api/apiClient';
 
 export default function MergePDFPage() {
     const [files, setFiles] = useState([]);
@@ -56,16 +56,16 @@ export default function MergePDFPage() {
 
         try {
             const data = await uploadFiles('/api/pdf/merge', formData, false);
-            if (data.download_url) {
-                const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-                const fileRes = await fetch(`${API_BASE_URL}${data.download_url}`);
-                if (!fileRes.ok) throw new Error('Failed to download result');
+            if (data && data.download_url) {
+                const fullDownloadUrl = getFullUrl(data.download_url);
+                const fileRes = await fetch(fullDownloadUrl);
+                if (!fileRes.ok) throw new Error('Failed to download merged document from server.');
                 const blob = await fileRes.blob();
                 const url = window.URL.createObjectURL(blob);
                 setDownloadUrl(url);
                 setIsSuccess(true);
             } else {
-                throw new Error("No download URL returned.");
+                throw new Error("No download URL returned from server.");
             }
         } catch (error) {
             setErrorMsg(error.message || "An error occurred during merging.");
@@ -172,13 +172,21 @@ export default function MergePDFPage() {
                 )}
 
                 {isProcessing && (
-                    <div id="processingUI" className="flex flex-col items-center justify-center p-12 bg-white/70 border border-white shadow-2xl rounded-3xl backdrop-blur-xl min-h-[400px] max-w-4xl mx-auto w-full mt-6">
-                        <div className="speeder-loader-wrapper mb-8">
-                            {/* A simple css spinner for now, since we removed the fake complex one */}
+                    <div id="processingUI" className="flex flex-col items-center justify-center p-8 sm:p-12 bg-white/70 border border-white shadow-2xl rounded-3xl backdrop-blur-xl min-h-[400px] max-w-4xl mx-auto w-full mt-6">
+                        <div className="speeder-loader-wrapper mb-6">
                             <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <h3 className="text-xl font-bold text-[#1e2a52] mb-2">Merging your documents...</h3>
-                        <p className="text-slate-500 text-center text-sm">This might take a moment.</p>
+                        <h3 className="text-xl font-bold text-[#1e2a52] mb-2 text-center">Merging your documents...</h3>
+                        <p className="text-slate-600 text-center text-sm max-w-md mb-2">
+                            Please wait. If the free backend was sleeping, it may take up to 50 seconds to wake up.
+                        </p>
+                        <p className="text-xs text-slate-400 text-center mb-6">A timeout will automatically trigger if the server does not respond.</p>
+                        <button
+                            onClick={() => setIsProcessing(false)}
+                            className="text-xs text-red-500 hover:text-red-700 underline font-medium cursor-pointer"
+                        >
+                            Cancel and go back
+                        </button>
                     </div>
                 )}
 
