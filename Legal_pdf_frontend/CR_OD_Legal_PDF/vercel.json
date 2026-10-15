@@ -1,0 +1,44 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/api/:match*"
+    },
+    {
+      "source": "/document-management/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/document-management/:match*"
+    },
+    {
+      "source": "/pdf/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/pdf/:match*"
+    },
+    {
+      "source": "/convert-to-pdf/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/convert-to-pdf/:match*"
+    },
+    {
+      "source": "/convert-from-pdf/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/convert-from-pdf/:match*"
+    },
+    {
+      "source": "/pdf-copyright-protection/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/pdf-copyright-protection/:match*"
+    },
+    {
+      "source": "/organize_pdf_services/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/organize_pdf_services/:match*"
+    },
+    {
+      "source": "/v1/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/v1/:match*"
+    },
+    {
+      "source": "/temp/:match*",
+      "destination": "https://cr-od-legal-pdf-backend.onrender.com/temp/:match*"
+    },
+    {
+      "source": "/((?!api|document-management|pdf|convert-to-pdf|convert-from-pdf|pdf-copyright-protection|organize_pdf_services|v1|temp).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

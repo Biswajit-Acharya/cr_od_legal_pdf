@@ -3,13 +3,14 @@
 // Backend can run on ANY port — just set VITE_BACKEND_URL in .env
 
 const getCleanApiBase = () => {
-    let url = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
-    // Auto-fix the known broken/typo render URL if configured in Vercel
-    if (url.includes('crodlegalpdf.onrender.com')) {
-        url = 'https://cr-od-legal-pdf-backend.onrender.com';
+    // When running in the browser on Vercel, use relative URLs ('')
+    // Vercel rewrites in vercel.json will proxy all /api requests to Render server-side
+    // This completely eliminates any browser CORS preflight blocking!
+    if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1')) {
+        return '';
     }
-    // If in production build and no URL provided, fallback to the live Render backend
-    if (!url && import.meta.env.PROD) {
+    let url = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
+    if (url.includes('crodlegalpdf.onrender.com')) {
         url = 'https://cr-od-legal-pdf-backend.onrender.com';
     }
     return url.replace(/\/+$/, '');

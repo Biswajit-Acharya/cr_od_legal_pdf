@@ -161,6 +161,7 @@ class Settings(BaseSettings):
             "http://127.0.0.1:8000",
             "http://localhost:8002",
             "http://127.0.0.1:8002",
+            "https://cr-od-legal-pdf-ten.vercel.app",
             "https://crod-legal-pdf.vercel.app",
             "https://crod-legal-pdf-git-main-crccf.vercel.app",
         ],
